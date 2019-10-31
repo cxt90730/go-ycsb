@@ -65,6 +65,8 @@ import (
 	_ "github.com/pingcap/go-ycsb/db/redis"
 	// Register boltdb database
 	_ "github.com/pingcap/go-ycsb/db/boltdb"
+
+	_ "github.com/pingcap/go-ycsb/db/rados"
 )
 
 var (
