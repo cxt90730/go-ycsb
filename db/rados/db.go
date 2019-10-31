@@ -60,7 +60,7 @@ func (r radosCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !fi.IsDir() {
+	if fi.IsDir() {
 		return nil, errors.New("path can not be a directory")
 	}
 	d, err := os.Open(opts.Path)
