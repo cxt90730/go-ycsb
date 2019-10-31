@@ -49,7 +49,7 @@ type radosClient struct {
 
 type radosState struct {
 	// Do we need a LRU cache here?
-	pool *rados.Pool
+	pool string
 	oid  string
 	data []byte
 }
@@ -117,10 +117,6 @@ func (r *radosClient) Close() error {
 // InitThread initializes the state associated to the goroutine worker.
 // The Returned context will be passed to the following usage.
 func (r *radosClient) InitThread(ctx context.Context, threadID int, threadCount int) context.Context {
-	pool, err := r.conn.OpenPool(r.pool)
-	if err != nil {
-		panic(err)
-	}
 
 	mockData4K := make([]byte, 4<<10)
 	for i := 0; i < len(mockData4K); i++ {
@@ -128,7 +124,7 @@ func (r *radosClient) InitThread(ctx context.Context, threadID int, threadCount 
 	}
 
 	state := &radosState{
-		pool: pool,
+		pool: r.pool,
 		data: mockData4K,
 		oid : fmt.Sprintf("%d_%d_%d", r.instanceId, time.Now().UnixNano(), rand.Uint64()),
 	}
@@ -138,7 +134,6 @@ func (r *radosClient) InitThread(ctx context.Context, threadID int, threadCount 
 // CleanupThread cleans up the state when the worker finished.
 func (r *radosClient) CleanupThread(ctx context.Context) {
 	state := ctx.Value(stateKey).(*radosState)
-	state.pool.Destroy()
 	_ = state.data
 	return
 }
@@ -176,7 +171,11 @@ func (r *radosClient) Update(ctx context.Context, table string, key string, valu
 // values: A map of field/value pairs to insert in the record.
 func (r *radosClient) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	state := ctx.Value(stateKey).(*radosState)
-	return state.pool.WriteSmallObject(state.oid, state.data)
+	pool, err := r.conn.OpenPool(state.pool)
+	if err != nil {
+		panic(err)
+	}
+	return pool.WriteSmallObject(state.oid, state.data)
 }
 
 // Delete deletes a record from the database.
