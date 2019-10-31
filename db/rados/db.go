@@ -94,6 +94,7 @@ func (r radosCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 		conn:       conn,
 		fsid:       fsid,
 		instanceId: id,
+		pool: opts.Pool,
 	}
 	return c, nil
 }
