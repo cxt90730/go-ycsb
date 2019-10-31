@@ -184,3 +184,7 @@ func (r *radosClient) Insert(ctx context.Context, table string, key string, valu
 func (r *radosClient) Delete(ctx context.Context, table string, key string) error {
 	return nil
 }
+
+func init() {
+	ycsb.RegisterDBCreator("rados", radosCreator{})
+}

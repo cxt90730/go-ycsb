@@ -13,7 +13,7 @@ require (
 	github.com/coreos/etcd v3.3.17+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
-	github.com/dgraph-io/badger v1.6.0
+	github.com/dgraph-io/badger v1.5.4
 	github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51 // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 // indirect
@@ -49,12 +49,12 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191019123150-400c56251341
 	github.com/tidwall/pretty v1.0.0 // indirect
-	github.com/tikv/client-go v0.0.0-20190822125924-d9c03d0f448b
+	github.com/tikv/client-go v0.0.0-20190421092910-44b82dcc9f4a
 	github.com/unrolled/render v1.0.1 // indirect
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
-	go.mongodb.org/mongo-driver v1.1.2
+	go.mongodb.org/mongo-driver v1.0.2
 	go.uber.org/multierr v1.2.0 // indirect
 	go.uber.org/zap v1.11.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
