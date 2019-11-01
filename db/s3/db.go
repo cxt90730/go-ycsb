@@ -17,6 +17,7 @@ const (
 	endpoint        = "s3.endpoint"
 	accessKey       = "s3.accessKeyId"
 	secretKey       = "s3.secretKey"
+	bucket          = "s3.bucket"
 	useHttps        = "s3.useHttps"
 	disableMd5Check = "s3.disableMd5"
 	dataLength      = "s3.dataLength"
@@ -32,6 +33,7 @@ type s3Options struct {
 	endpoint        string
 	accessKey       string
 	secretKey       string
+	bucket          string
 	useHttps        bool
 	disableMd5Check bool
 	dataLength      uint64
@@ -43,6 +45,7 @@ type s3Client struct {
 
 type s3State struct {
 	c *s3.S3
+	b string
 	r io.ReadSeeker
 }
 
@@ -56,6 +59,7 @@ func getOptions(p *properties.Properties) s3Options {
 	s3Endpoint := p.GetString(endpoint, "s3.test.com")
 	s3AccessKey := p.GetString(accessKey, "hehehehe")
 	s3SecretKey := p.GetString(secretKey, "hehehehe")
+	s3Bucket := p.GetString(bucket, "hehe")
 	s3UseHttps := p.GetBool(useHttps, false)
 	s3DisableMd5 := p.GetBool(disableMd5Check, false)
 	s3DataLength, err := humanize.ParseBytes(p.GetString(dataLength, "4KiB"))
@@ -66,6 +70,7 @@ func getOptions(p *properties.Properties) s3Options {
 		endpoint:        s3Endpoint,
 		accessKey:       s3AccessKey,
 		secretKey:       s3SecretKey,
+		bucket:          s3Bucket,
 		useHttps:        s3UseHttps,
 		disableMd5Check: s3DisableMd5,
 		dataLength:      s3DataLength,
@@ -104,6 +109,7 @@ func (c *s3Client) InitThread(ctx context.Context, threadID int, threadCount int
 	state := &s3State{
 		c: client,
 		r: r,
+		b: c.p.bucket,
 	}
 	return context.WithValue(ctx, stateKey, state)
 }
@@ -149,7 +155,7 @@ func (c *s3Client) Insert(ctx context.Context, table string, key string, values 
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
 	input := &s3.PutObjectInput{
-		Bucket: aws.String(table),
+		Bucket: aws.String(state.b),
 		Key:    aws.String(key),
 		Body:   state.r,
 	}
