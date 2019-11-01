@@ -67,6 +67,8 @@ import (
 	_ "github.com/pingcap/go-ycsb/db/boltdb"
 
 	_ "github.com/pingcap/go-ycsb/db/rados"
+
+	_ "github.com/pingcap/go-ycsb/db/s3"
 )
 
 var (
