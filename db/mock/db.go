@@ -49,6 +49,7 @@ type mockClient struct {
 	l    uint64
 	path string
 	pool string
+	port string
 }
 
 type mockState struct {
@@ -56,6 +57,7 @@ type mockState struct {
 	pool string
 	oid  string
 	data []byte
+	port string
 }
 
 func (r mockCreator) Create(p *properties.Properties) (ycsb.DB, error) {
@@ -65,6 +67,7 @@ func (r mockCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 		l:    opts.DataLength,
 		path: opts.Path,
 		pool: opts.Pool,
+		port: opts.Port,
 	}
 	newMockServer(opts.Path, opts.Port)
 	return c, nil
@@ -120,6 +123,7 @@ func (r *mockClient) InitThread(ctx context.Context, threadID int, threadCount i
 		pool: r.pool,
 		data: mockData4K,
 		oid:  fmt.Sprintf("%d_%d", time.Now().UnixNano(), rand.Uint64()),
+		port: r.port,
 	}
 	return context.WithValue(ctx, stateKey, state)
 }
@@ -164,21 +168,21 @@ func (r *mockClient) Update(ctx context.Context, table string, key string, value
 // values: A map of field/value pairs to insert in the record.
 func (r *mockClient) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	state := ctx.Value(stateKey).(*mockState)
-	req, err := http.NewRequest("PUT", "localhost", bytes.NewReader(state.data))
+	req, err := http.NewRequest("PUT", "localhost:" + state.port, bytes.NewReader(state.data))
 	if err != nil {
-		return err
+		panic(err)
 	}
 	req.Header.Set("Pool", state.pool)
 	req.Header.Set("Oid", state.oid)
 	c := http.DefaultClient
 	res, err := c.Do(req)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	if res.StatusCode != http.StatusOK {
 		d, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return err
+			panic(err)
 		}
 		defer res.Body.Close()
 		fmt.Println(string(d))
