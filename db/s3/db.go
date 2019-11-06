@@ -10,7 +10,6 @@ import (
 	"github.com/journeymidnight/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"bytes"
-	"io"
 	"fmt"
 	"io/ioutil"
 )
@@ -48,7 +47,7 @@ type s3Client struct {
 type s3State struct {
 	c *s3.S3
 	b string
-	r io.ReadSeeker
+	d []byte
 }
 
 func (s s3Creator) Create(p *properties.Properties) (ycsb.DB, error) {
@@ -106,11 +105,10 @@ func (c *s3Client) InitThread(ctx context.Context, threadID int, threadCount int
 	for i := 0; i < len(mockData); i++ {
 		mockData[i] = uint8(i % 255)
 	}
-	r := bytes.NewReader(mockData)
 	client := newS3(c.p)
 	state := &s3State{
 		c: client,
-		r: r,
+		d: mockData,
 		b: c.p.bucket,
 	}
 	return context.WithValue(ctx, stateKey, state)
@@ -156,18 +154,13 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 func (c *s3Client) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
-	d, err := ioutil.ReadAll(state.r)
-	if err != nil {
-		panic(err)
-	}
-
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(state.b),
 		Key:    aws.String(key),
-		Body:   bytes.NewReader(d),
+		Body:   bytes.NewReader(state.d),
 	}
-	fmt.Println("Bucket:", bucket, "Key:", key, "Body:", len(d))
-	_, err = client.PutObject(input)
+	fmt.Println("Bucket:", bucket, "Key:", key, "Body:", len(state.d))
+	_, err := client.PutObject(input)
 	if err != nil {
 		return err
 	}
