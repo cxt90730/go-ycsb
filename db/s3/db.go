@@ -11,6 +11,8 @@ import (
 	"github.com/dustin/go-humanize"
 	"bytes"
 	"io"
+	"fmt"
+	"io/ioutil"
 )
 
 const (
@@ -154,12 +156,18 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 func (c *s3Client) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
+	d, err := ioutil.ReadAll(state.r)
+	if err != nil {
+		panic(err)
+	}
+
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(state.b),
 		Key:    aws.String(key),
-		Body:   state.r,
+		Body:   bytes.NewReader(d),
 	}
-	_, err := client.PutObject(input)
+	fmt.Println("Bucket:", bucket, "Key:", key, "Body:", len(d))
+	_, err = client.PutObject(input)
 	if err != nil {
 		return err
 	}
