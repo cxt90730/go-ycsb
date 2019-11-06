@@ -10,7 +10,6 @@ import (
 	"github.com/journeymidnight/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"bytes"
-	"fmt"
 )
 
 const (
@@ -158,7 +157,6 @@ func (c *s3Client) Insert(ctx context.Context, table string, key string, values 
 		Key:    aws.String(key),
 		Body:   bytes.NewReader(state.d),
 	}
-	fmt.Println("Bucket:", bucket, "Key:", key, "Body:", len(state.d))
 	_, err := client.PutObject(input)
 	if err != nil {
 		return err
