@@ -35,7 +35,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
 	github.com/journeymidnight/aws-sdk-go v1.18.1
-	github.com/journeymidnight/radoshttpd v0.0.0-20190911073816-6df3523aa9e3
+	github.com/journeymidnight/radoshttpd v0.0.0-20190617133011-609666b51136
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/magiconair/properties v1.8.1
