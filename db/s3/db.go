@@ -11,7 +11,6 @@ import (
 	"github.com/dustin/go-humanize"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 )
 
 const (
