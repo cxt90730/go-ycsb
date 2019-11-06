@@ -168,7 +168,7 @@ func (r *mockClient) Update(ctx context.Context, table string, key string, value
 // values: A map of field/value pairs to insert in the record.
 func (r *mockClient) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	state := ctx.Value(stateKey).(*mockState)
-	req, err := http.NewRequest("PUT", "localhost:" + state.port, bytes.NewReader(state.data))
+	req, err := http.NewRequest("PUT", "http://127.0.0.1:" + state.port, bytes.NewReader(state.data))
 	if err != nil {
 		panic(err)
 	}
