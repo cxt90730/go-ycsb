@@ -37,13 +37,12 @@ func newCephConn(path string) (*rados.Conn, error) {
 	return conn, nil
 }
 
-type myHandler struct{
+type myHandler struct {
 	*rados.Conn
 }
 
 func (m *myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pool := r.Header.Get("Pool")
-	path := r.Header.Get("Path")
 	oid := r.Header.Get("Oid")
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {

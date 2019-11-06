@@ -45,8 +45,10 @@ type mockOptions struct {
 }
 
 type mockClient struct {
-	p *properties.Properties
-	l uint64
+	p    *properties.Properties
+	l    uint64
+	path string
+	pool string
 }
 
 type mockState struct {
@@ -59,8 +61,10 @@ type mockState struct {
 func (r mockCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	opts := getOptions(p)
 	c := &mockClient{
-		p: p,
-		l: opts.DataLength,
+		p:    p,
+		l:    opts.DataLength,
+		path: opts.Path,
+		pool: opts.Pool,
 	}
 	newMockServer(opts.Path, opts.Port)
 	return c, nil
@@ -113,6 +117,7 @@ func (r *mockClient) InitThread(ctx context.Context, threadID int, threadCount i
 		mockData4K[i] = uint8(i % 255)
 	}
 	state := &mockState{
+		pool: r.pool,
 		data: mockData4K,
 		oid:  fmt.Sprintf("%d_%d", time.Now().UnixNano(), rand.Uint64()),
 	}
@@ -163,6 +168,8 @@ func (r *mockClient) Insert(ctx context.Context, table string, key string, value
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Pool", state.pool)
+	req.Header.Set("Oid", state.oid)
 	c := http.DefaultClient
 	res, err := c.Do(req)
 	if err != nil {
@@ -173,6 +180,7 @@ func (r *mockClient) Insert(ctx context.Context, table string, key string, value
 		if err != nil {
 			return err
 		}
+		defer res.Body.Close()
 		fmt.Println(string(d))
 	}
 	return nil
