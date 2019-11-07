@@ -44,30 +44,37 @@ type myHandler struct {
 func (m *myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pool := r.Header.Get("Pool")
 	oid := r.Header.Get("Oid")
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte("hehe read data"))
-		return
+	mockType := r.Header.Get("Type")
+	if mockType == "1" {
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(400)
+			w.Write([]byte("hehe read data"))
+			return
+		}
+		defer r.Body.Close()
+		if mockType == "2" {
+			conn := m.Conn
+			if err != nil {
+				w.WriteHeader(400)
+				w.Write([]byte("hehe ceph conn"))
+				return
+			}
+			p, err := conn.OpenPool(pool)
+			if err != nil {
+				w.WriteHeader(400)
+				w.Write([]byte("hehe open pool"))
+				return
+			}
+			err = p.WriteSmallObject(oid, data)
+			if err != nil {
+				w.WriteHeader(400)
+				w.Write([]byte("hehe WriteSmallObject"))
+				return
+			}
+		}
+
 	}
-	defer r.Body.Close()
-	conn := m.Conn
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte("hehe ceph conn"))
-		return
-	}
-	p, err := conn.OpenPool(pool)
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte("hehe open pool"))
-		return
-	}
-	err = p.WriteSmallObject(oid, data)
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte("hehe WriteSmallObject"))
-		return
-	}
+
 	w.Write(nil)
 }

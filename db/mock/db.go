@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
-	"math/rand"
 	"time"
 	"net/http"
 	"io/ioutil"
@@ -17,6 +16,7 @@ const (
 	cephPath   = "ceph.path"
 	poolName   = "ceph.pool"
 	mockPort   = "mock.port"
+	mockType   = "mock.type"
 	mockLength = "mock.dataLength"
 
 	MON_TIMEOUT                = "10"
@@ -42,32 +42,33 @@ type mockOptions struct {
 	Pool       string
 	Port       string
 	DataLength uint64
+	Type       string
 }
 
 type mockClient struct {
-	p    *properties.Properties
-	l    uint64
-	path string
-	pool string
-	port string
+	p     *properties.Properties
+	l     uint64
+	path  string
+	pool  string
+	port  string
+	mType string
 }
 
 type mockState struct {
 	// Do we need a LRU cache here?
-	pool string
 	oid  string
 	data []byte
-	port string
 }
 
 func (r mockCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	opts := getOptions(p)
 	c := &mockClient{
-		p:    p,
-		l:    opts.DataLength,
-		path: opts.Path,
-		pool: opts.Pool,
-		port: opts.Port,
+		p:     p,
+		l:     opts.DataLength,
+		path:  opts.Path,
+		pool:  opts.Pool,
+		port:  opts.Port,
+		mType: opts.Type,
 	}
 	newMockServer(opts.Path, opts.Port)
 	return c, nil
@@ -77,6 +78,7 @@ func getOptions(p *properties.Properties) mockOptions {
 	path := p.GetString(cephPath, "/etc/ceph.conf")
 	pool := p.GetString(poolName, "rabbit")
 	port := p.GetString(mockPort, "80")
+	mType := p.GetString(mockType, "0")
 	length, err := humanize.ParseBytes(p.GetString(mockLength, "4KiB"))
 	if err != nil {
 		panic(err)
@@ -86,6 +88,7 @@ func getOptions(p *properties.Properties) mockOptions {
 		Pool:       pool,
 		Port:       port,
 		DataLength: length,
+		Type:       mType,
 	}
 }
 
@@ -120,10 +123,7 @@ func (r *mockClient) InitThread(ctx context.Context, threadID int, threadCount i
 		mockData4K[i] = uint8(i % 255)
 	}
 	state := &mockState{
-		pool: r.pool,
 		data: mockData4K,
-		oid:  fmt.Sprintf("%d_%d", time.Now().UnixNano(), rand.Uint64()),
-		port: r.port,
 	}
 	return context.WithValue(ctx, stateKey, state)
 }
@@ -168,23 +168,24 @@ func (r *mockClient) Update(ctx context.Context, table string, key string, value
 // values: A map of field/value pairs to insert in the record.
 func (r *mockClient) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	state := ctx.Value(stateKey).(*mockState)
-	req, err := http.NewRequest("PUT", "http://127.0.0.1:" + state.port, bytes.NewReader(state.data))
+	req, err := http.NewRequest(http.MethodPut, "http://127.0.0.1:"+r.port, bytes.NewReader(state.data))
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Pool", state.pool)
-	req.Header.Set("Oid", state.oid)
+	req.Header.Set("Pool", r.pool)
+	req.Header.Set("Oid", key)
+	req.Header.Set("Type", r.mType)
 	c := http.DefaultClient
 	res, err := c.Do(req)
 	if err != nil {
 		panic(err)
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		d, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			panic(err)
 		}
-		defer res.Body.Close()
 		fmt.Println(string(d))
 	}
 	return nil
