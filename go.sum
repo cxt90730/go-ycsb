@@ -183,6 +183,8 @@ github.com/jonboulle/clockwork v0.1.0 h1:VKV+ZcuP6l3yW9doeqz6ziZGgcynBVQO+obU0+0
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/journeymidnight/aws-sdk-go v1.18.1 h1:/dv12U8x+EHVEmW66rXtI00Do+ZMREGitokPGMpUalc=
 github.com/journeymidnight/aws-sdk-go v1.18.1/go.mod h1:on1A11DghtZvaybRzuiHW6fqTXv2RPjFTx6OhMc8sZc=
+github.com/journeymidnight/radoshttpd v0.0.0-20190617133011-609666b51136 h1:ioRwpqJIOz8DOhriRNkd2/DYXYLi44N61N9MnjozzuM=
+github.com/journeymidnight/radoshttpd v0.0.0-20190617133011-609666b51136/go.mod h1:crzxK1DDd3sNyFWzwbx/84lTNk4TO4wsvjl186nH+R4=
 github.com/journeymidnight/radoshttpd v0.0.0-20190911073816-6df3523aa9e3 h1:gAqx7/mEkY0Uys+WCCVuophSbCR8bDLSh6kkF6/RlDk=
 github.com/journeymidnight/radoshttpd v0.0.0-20190911073816-6df3523aa9e3/go.mod h1:crzxK1DDd3sNyFWzwbx/84lTNk4TO4wsvjl186nH+R4=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=

@@ -69,6 +69,8 @@ import (
 	_ "github.com/pingcap/go-ycsb/db/rados"
 
 	_ "github.com/pingcap/go-ycsb/db/s3"
+
+	_ "github.com/pingcap/go-ycsb/db/mock"
 )
 
 var (
