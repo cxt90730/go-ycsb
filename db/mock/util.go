@@ -45,7 +45,7 @@ func (m *myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pool := r.Header.Get("Pool")
 	oid := r.Header.Get("Oid")
 	mockType := r.Header.Get("Type")
-	if mockType == "1" {
+	if mockType == "1" || mockType == "2" {
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(400)
