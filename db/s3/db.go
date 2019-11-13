@@ -136,8 +136,7 @@ func (c *s3Client) Read(ctx context.Context, table string, key string, fields []
 		return nil, err
 	}
 	data, err := ioutil.ReadAll(object.Body)
-	result := map[string][]byte{}
-	result = *new(map[string][]byte)
+	result := make(map[string][]byte)
 	result[key] = data
 	return result, nil
 }
@@ -149,23 +148,19 @@ func (c *s3Client) Read(ctx context.Context, table string, key string, fields []
 // fields: The list of fields to read, nil|empty for reading all.
 func (c *s3Client) Scan(ctx context.Context, table string, startKey string, count int, fields []string) ([]map[string][]byte, error) {
 	var counter, startkeyNumber, numberOfIteration int
-	var result []map[string][]byte
 	counter = 0
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
 	params := &s3.ListObjectsInput{
-		Bucket: aws.String(state.b),
+		Bucket:    aws.String(state.b),
+		Delimiter: aws.String("/"),
+		MaxKeys:   aws.Int64(1000),
 	}
 	list, err := client.ListObjects(params)
 	if err != nil {
 		return nil, err
 	}
 	var listSort []string
-	if list != nil {
-		listSort[0] = *list.Contents[0].Key
-	} else {
-		return nil, nil
-	}
 	for _, v := range list.Contents {
 		listSort = append(listSort, *v.Key)
 	}
@@ -182,8 +177,8 @@ func (c *s3Client) Scan(ctx context.Context, table string, startKey string, coun
 	} else {
 		numberOfIteration = len(listSort)
 	}
-	result = *new([]map[string][]byte)
-	param := map[string][]byte{}
+	param := make(map[string][]byte)
+	var result []map[string][]byte
 	for i := startkeyNumber; i < numberOfIteration; i++ {
 		key := listSort[i]
 		input := &s3.GetObjectInput{
@@ -195,7 +190,6 @@ func (c *s3Client) Scan(ctx context.Context, table string, startKey string, coun
 			return nil, err
 		}
 		data, err := ioutil.ReadAll(object.Body)
-		param = *new(map[string][]byte)
 		param[key] = data
 		result = append(result, param)
 	}
@@ -218,14 +212,11 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	if err != nil {
 		return err
 	}
-	mockNewData := make([]byte, c.p.dataLength)
-	for i := 0; i < len(mockNewData); i++ {
-		mockNewData[i] = uint8(i % 255)
-	}
+	data, err := ioutil.ReadAll(out.Body)
 	input := &s3.PutObjectInput{
 		Bucket:   aws.String(state.b),
 		Key:      aws.String(key),
-		Body:     bytes.NewReader(mockNewData),
+		Body:     bytes.NewReader(data),
 		Metadata: out.Metadata,
 	}
 	_, err = client.PutObject(input)
