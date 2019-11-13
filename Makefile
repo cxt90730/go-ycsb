@@ -16,7 +16,8 @@ endif
 default: build
 
 build: export GO111MODULE=on
-build:
+build: export GOPROXY=https://goproxy.cn
+build: 
 ifeq ($(TAGS),)
 	$(CGO_FLAGS) go build -o bin/go-ycsb cmd/go-ycsb/*
 else
