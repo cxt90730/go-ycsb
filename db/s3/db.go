@@ -1,15 +1,16 @@
 package s3
 
 import (
+	"bytes"
 	"context"
+	"github.com/dustin/go-humanize"
+	"github.com/journeymidnight/aws-sdk-go/aws"
+	"github.com/journeymidnight/aws-sdk-go/aws/credentials"
+	"github.com/journeymidnight/aws-sdk-go/aws/session"
+	"github.com/journeymidnight/aws-sdk-go/service/s3"
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
-	"github.com/journeymidnight/aws-sdk-go/aws/credentials"
-	"github.com/journeymidnight/aws-sdk-go/service/s3"
-	"github.com/journeymidnight/aws-sdk-go/aws/session"
-	"github.com/journeymidnight/aws-sdk-go/aws"
-	"github.com/dustin/go-humanize"
-	"bytes"
+	"io/ioutil"
 )
 
 const (
@@ -123,7 +124,21 @@ func (c *s3Client) CleanupThread(ctx context.Context) {
 // key: The record key of the record to read.
 // fields: The list of fields to read, nil|empty for reading all.
 func (c *s3Client) Read(ctx context.Context, table string, key string, fields []string) (map[string][]byte, error) {
-	return nil, nil
+	state := ctx.Value(stateKey).(*s3State)
+	client := state.c
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(state.b),
+		Key:    aws.String(key),
+	}
+	object, err := client.GetObject(input)
+	if err != nil {
+		return nil, err
+	}
+	data, err := ioutil.ReadAll(object.Body)
+	result := map[string][]byte{}
+	result = *new(map[string][]byte)
+	result[key] = data
+	return result, nil
 }
 
 // Scan scans records from the database.
@@ -141,6 +156,30 @@ func (c *s3Client) Scan(ctx context.Context, table string, startKey string, coun
 // key: The record key of the record to update.
 // values: A map of field/value pairs to update in the record.
 func (c *s3Client) Update(ctx context.Context, table string, key string, values map[string][]byte) error {
+	state := ctx.Value(stateKey).(*s3State)
+	client := state.c
+	params := &s3.GetObjectInput{
+		Bucket: aws.String(state.b),
+		Key:    aws.String(key),
+	}
+	out, err := client.GetObject(params)
+	if err != nil {
+		return err
+	}
+	mockNewData := make([]byte, c.p.dataLength)
+	for i := 0; i < len(mockNewData); i++ {
+		mockNewData[i] = uint8(i % 255)
+	}
+	input := &s3.PutObjectInput{
+		Bucket:   aws.String(state.b),
+		Key:      aws.String(key),
+		Body:     bytes.NewReader(mockNewData),
+		Metadata: out.Metadata,
+	}
+	_, err = client.PutObject(input)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

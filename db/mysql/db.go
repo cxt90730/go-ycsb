@@ -18,7 +18,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pingcap/go-ycsb/pkg/prop"
 	"github.com/pingcap/go-ycsb/pkg/util"
@@ -37,6 +40,7 @@ const (
 	mysqlPassword   = "mysql.password"
 	mysqlDBName     = "mysql.db"
 	mysqlForceIndex = "mysql.force_index"
+	mysqlTrans      = "mysql.transaction"
 	// TODO: support batch and auto commit
 )
 
@@ -48,8 +52,24 @@ type mysqlDB struct {
 	db                *sql.DB
 	verbose           bool
 	forceIndexKeyword string
+	trans             bool
 
 	bufPool *util.BufPool
+}
+
+func (d *mysqlDB) NewTrans() (tx *sql.Tx, err error) {
+	tx, err = d.db.Begin()
+	return
+}
+
+func (d *mysqlDB) AbortTrans(tx *sql.Tx) (err error) {
+	err = tx.Rollback()
+	return
+}
+
+func (d *mysqlDB) CommitTrans(tx *sql.Tx) (err error) {
+	err = tx.Commit()
+	return
 }
 
 type contextKey string
@@ -72,6 +92,13 @@ func (c mysqlCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	user := p.GetString(mysqlUser, "root")
 	password := p.GetString(mysqlPassword, "")
 	dbName := p.GetString(mysqlDBName, "test")
+	dbTrans := p.GetString(mysqlTrans, "false")
+
+	if dbTrans == "false" {
+		d.trans = false
+	} else {
+		d.trans = true
+	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, dbName)
 	var err error
@@ -276,14 +303,37 @@ func (db *mysqlDB) execQuery(ctx context.Context, query string, args ...interfac
 		fmt.Printf("%s %v\n", query, args)
 	}
 
-	stmt, err := db.getAndCacheStmt(ctx, query)
-	if err != nil {
+	if db.trans {
+		tx, err := db.NewTrans()
+		if err != nil {
+			panic(err)
+		}
+		defer func() {
+			if err != nil {
+				db.AbortTrans(tx)
+				panic(err)
+			}
+		}()
+
+		_, err = tx.Exec(query, args...)
+		if err != nil {
+			panic(err)
+		}
+		err = db.CommitTrans(tx)
+		if err != nil {
+			panic(err)
+		}
+		return err
+	} else {
+		stmt, err := db.getAndCacheStmt(ctx, query)
+		if err != nil {
+			return err
+		}
+
+		_, err = stmt.ExecContext(ctx, args...)
+		db.clearCacheIfFailed(ctx, query, err)
 		return err
 	}
-
-	_, err = stmt.ExecContext(ctx, args...)
-	db.clearCacheIfFailed(ctx, query, err)
-	return err
 }
 
 func (db *mysqlDB) Update(ctx context.Context, table string, key string, values map[string][]byte) error {
@@ -316,7 +366,7 @@ func (db *mysqlDB) Update(ctx context.Context, table string, key string, values 
 
 func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	args := make([]interface{}, 0, 1+len(values))
-	args = append(args, key)
+	args = append(args, strconv.FormatInt(time.Now().UnixNano(), 10)+"_"+strconv.FormatInt(rand.Int63(), 10))
 
 	buf := db.bufPool.Get()
 	defer db.bufPool.Put(buf)
