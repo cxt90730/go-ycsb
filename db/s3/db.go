@@ -11,6 +11,7 @@ import (
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
 	"io/ioutil"
+	"sort"
 )
 
 const (
@@ -134,9 +135,12 @@ func (c *s3Client) Read(ctx context.Context, table string, key string, fields []
 	if err != nil {
 		return nil, err
 	}
+	defer object.Body.Close()
 	data, err := ioutil.ReadAll(object.Body)
-	result := map[string][]byte{}
-	result = *new(map[string][]byte)
+	if err != nil {
+                return nil, err
+        }
+	result := make(map[string][]byte)
 	result[key] = data
 	return result, nil
 }
@@ -147,7 +151,53 @@ func (c *s3Client) Read(ctx context.Context, table string, key string, fields []
 // count: The number of records to read.
 // fields: The list of fields to read, nil|empty for reading all.
 func (c *s3Client) Scan(ctx context.Context, table string, startKey string, count int, fields []string) ([]map[string][]byte, error) {
-	return nil, nil
+	var counter, startkeyNumber, numberOfIteration int
+	counter = 0
+	state := ctx.Value(stateKey).(*s3State)
+	client := state.c
+	params := &s3.ListObjectsInput{
+		Bucket:    aws.String(state.b),
+		Delimiter: aws.String("/"),
+		MaxKeys:   aws.Int64(1000),
+	}
+	list, err := client.ListObjects(params)
+	if err != nil {
+		return nil, err
+	}
+	var listSort []string
+	for _, v := range list.Contents {
+		listSort = append(listSort, *v.Key)
+	}
+	sort.Strings(listSort)
+	for _, listWithSortKey := range listSort {
+		if listWithSortKey == startKey {
+			startkeyNumber = counter
+		} else {
+			counter = counter + 1
+		}
+	}
+	if count < len(listSort) {
+		numberOfIteration = count
+	} else {
+		numberOfIteration = len(listSort)
+	}
+	param := make(map[string][]byte)
+	var result []map[string][]byte
+	for i := startkeyNumber; i < numberOfIteration; i++ {
+		key := listSort[i]
+		input := &s3.GetObjectInput{
+			Bucket: aws.String(state.b),
+			Key:    aws.String(key),
+		}
+		object, err := client.GetObject(input)
+		if err != nil {
+			return nil, err
+		}
+		data, err := ioutil.ReadAll(object.Body)
+		param[key] = data
+		result = append(result, param)
+	}
+	return result, nil
 }
 
 // Update updates a record in the database. Any field/value pairs will be written into the
@@ -166,14 +216,11 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	if err != nil {
 		return err
 	}
-	mockNewData := make([]byte, c.p.dataLength)
-	for i := 0; i < len(mockNewData); i++ {
-		mockNewData[i] = uint8(i % 255)
-	}
+	data, err := ioutil.ReadAll(out.Body)
 	input := &s3.PutObjectInput{
 		Bucket:   aws.String(state.b),
 		Key:      aws.String(key),
-		Body:     bytes.NewReader(mockNewData),
+		Body:     bytes.NewReader(data),
 		Metadata: out.Metadata,
 	}
 	_, err = client.PutObject(input)
@@ -207,6 +254,16 @@ func (c *s3Client) Insert(ctx context.Context, table string, key string, values 
 // table: The name of the table.
 // key: The record key of the record to delete.
 func (c *s3Client) Delete(ctx context.Context, table string, key string) error {
+	state := ctx.Value(stateKey).(*s3State)
+	client := state.c
+	input := &s3.DeleteObjectInput{
+		Bucket: aws.String(state.b),
+		Key:    aws.String(key),
+	}
+	_, err := client.DeleteObject(input)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
