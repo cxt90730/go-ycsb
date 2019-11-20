@@ -225,7 +225,7 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	}
 	_, err = client.PutObject(input)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	return nil
 }
@@ -245,7 +245,7 @@ func (c *s3Client) Insert(ctx context.Context, table string, key string, values 
 	}
 	_, err := client.PutObject(input)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	return nil
 }
@@ -262,7 +262,7 @@ func (c *s3Client) Delete(ctx context.Context, table string, key string) error {
 	}
 	_, err := client.DeleteObject(input)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	return nil
 }
