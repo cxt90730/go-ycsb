@@ -22,7 +22,7 @@ const (
 	useHttps        = "s3.useHttps"
 	disableMd5Check = "s3.disableMd5"
 	dataLength      = "s3.dataLength"
-	headSwitch      = "s3.headSwitch"
+	onlyHead        = "s3.onlyHead"
 )
 
 type contextKey string
@@ -39,7 +39,7 @@ type s3Options struct {
 	useHttps        bool
 	disableMd5Check bool
 	dataLength      uint64
-	switchHead      bool
+	validHead       bool
 }
 
 type s3Client struct {
@@ -66,7 +66,7 @@ func getOptions(p *properties.Properties) s3Options {
 	s3UseHttps := p.GetBool(useHttps, false)
 	s3DisableMd5 := p.GetBool(disableMd5Check, false)
 	s3DataLength, err := humanize.ParseBytes(p.GetString(dataLength, "4KiB"))
-	s3HeadSwitch := p.GetBool(headSwitch, false)
+	s3OnlyHead := p.GetBool(onlyHead, false)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +78,7 @@ func getOptions(p *properties.Properties) s3Options {
 		useHttps:        s3UseHttps,
 		disableMd5Check: s3DisableMd5,
 		dataLength:      s3DataLength,
-		switchHead:      s3HeadSwitch,
+		validHead:       s3OnlyHead,
 	}
 }
 
@@ -131,7 +131,7 @@ func (c *s3Client) CleanupThread(ctx context.Context) {
 func (c *s3Client) Read(ctx context.Context, table string, key string, fields []string) (result map[string][]byte, err error) {
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
-	if !c.p.switchHead {
+	if !c.p.validHead {
 		input := &s3.GetObjectInput{
 			Bucket: aws.String(state.b),
 			Key:    aws.String(key),
@@ -177,7 +177,7 @@ func (c *s3Client) Scan(ctx context.Context, table string, startKey string, coun
 	}
 	list, err := client.ListObjects(params)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 	var listSort []string
 	for _, v := range list.Contents {
@@ -206,7 +206,7 @@ func (c *s3Client) Scan(ctx context.Context, table string, startKey string, coun
 		}
 		object, err := client.GetObject(input)
 		if err != nil {
-			return nil, err
+			panic(err)
 		}
 		data, err := ioutil.ReadAll(object.Body)
 		param[key] = data
@@ -229,7 +229,7 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	}
 	out, err := client.GetObject(params)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	data, err := ioutil.ReadAll(out.Body)
 	input := &s3.PutObjectInput{
@@ -240,7 +240,7 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	}
 	_, err = client.PutObject(input)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	return nil
 }
