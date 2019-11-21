@@ -17,14 +17,15 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"github.com/pingcap/go-ycsb/pkg/prop"
+	"github.com/pingcap/go-ycsb/pkg/util"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/pingcap/go-ycsb/pkg/prop"
-	"github.com/pingcap/go-ycsb/pkg/util"
 
 	// mysql package
 	_ "github.com/go-sql-driver/mysql"
@@ -43,6 +44,15 @@ const (
 	mysqlTrans      = "mysql.transaction"
 	// TODO: support batch and auto commit
 )
+
+type Object struct {
+	CustomAttributes map[string]string
+	ACL              Acl
+}
+
+type Acl struct {
+	CannedAcl string
+}
 
 type mysqlCreator struct {
 }
@@ -364,32 +374,93 @@ func (db *mysqlDB) Update(ctx context.Context, table string, key string, values 
 	return db.execQuery(ctx, buf.String(), args...)
 }
 
-func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
+func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values map[string][]byte) (err error) {
+	var ibucketname, iname, iversion, ilocation, ipool, iownerId, isize, iobjectId, ilastModifiedTime, ietag, icontentType, icustomattributes, iacl, ioullVersion, ideleteMarker, isseType, iencryptionKey, iinitializationVector, itype, istorageClass string
 	args := make([]interface{}, 0, 1+len(values))
-	args = append(args, strconv.FormatInt(time.Now().UnixNano(), 10)+"_"+strconv.FormatInt(rand.Int63(), 10))
+	args = append(args, key)
 
 	buf := db.bufPool.Get()
 	defer db.bufPool.Put(buf)
 
-	buf.WriteString("INSERT IGNORE INTO ")
-	buf.WriteString(table)
-	buf.WriteString(" (YCSB_KEY")
+	if table == "objects" { //If you specify a table name and the table name is objects, execute the method
+		bucketName := "test_for_ycsb"
+		name := strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(rand.Int63(), 10)
+		sqltext := "select bucketname,name,version,location,pool,ownerid,size,objectid,lastmodifiedtime,etag,contenttype," +
+			"customattributes,acl,nullversion,deletemarker,ssetype,encryptionkey,initializationvector,type,storageclass from objects where bucketname=? and name=? order by bucketname,name,version limit 1"
+		row := db.db.QueryRow(sqltext, bucketName, name)
+		err = row.Scan(
+			&ibucketname,
+			&iname,
+			&iversion,
+			&ilocation,
+			&ipool,
+			&iownerId,
+			&isize,
+			&iobjectId,
+			&ilastModifiedTime,
+			&ietag,
+			&icontentType,
+			&icustomattributes,
+			&iacl,
+			&ioullVersion,
+			&ideleteMarker,
+			&isseType,
+			&iencryptionKey,
+			&iinitializationVector,
+			&itype,
+			&istorageClass,
+		)
+		buf.WriteString("INSERT IGNORE INTO ")
+		buf.WriteString(table)
+		buf.WriteString(" (bucketname,name,version,location,pool,ownerid,size,objectid,lastmodifiedtime,etag,contenttype,customattributes,acl,nullversion,deletemarker,ssetype,encryptionkey,initializationvector,type,storageclass) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+		v := math.MaxUint64 - uint64(time.Now().UnixNano())
+		version := strconv.FormatUint(v, 10)
+		location := "5f385d64-f877-4981-91a1-87befa409c84"
+		pool := "tiger"
+		ownerid := "3cebb65c-0a85-4b32-9f86-b527adee8f24"
+		size := "20894192"
+		objectid := "4347:1"
+		lastmodifiedtime := "2019-11-19 01:59:54"
+		etag := "f484d42635656c09fc9716e2d40201b1"
+		contenttype := "application/x-sharedlib"
+		o := new(Object)
+		cus := make(map[string]string)
+		cus["Content-Type"] = "application/x-sharedlib"
+		cus["X-Amz-Meta-S3cmd-Attrs"] = "atime:1573803422/ctime:1573803423/gid:0/gname:root/md5:f484d42635656c09fc9716e2d40201b1/mode:33188/mtime:1573803423/uid:0/uname:root"
+		cus["md5Sum"] = "12345678901234567890123456789012"
+		o.CustomAttributes = cus
+		o.ACL.CannedAcl = "private"
+		customattributes, _ := json.Marshal(o.CustomAttributes)
+		acl, _ := json.Marshal(o.ACL)
+		nullversion := "1"
+		deletemarker := "0"
+		ssetype := ""
+		encryptionkey := ""
+		initializationvector := "NULL"
+		typetype := "0"
+		storageclass := "0"
+		err = db.execQuery(ctx, buf.String(), bucketName, name, version, location, pool, ownerid, size, objectid, lastmodifiedtime, etag, contenttype, customattributes, acl, nullversion, deletemarker, ssetype, encryptionkey, initializationvector, typetype, storageclass)
+	} else {
+		buf.WriteString("INSERT IGNORE INTO ")
+		buf.WriteString(table)
+		buf.WriteString(" (YCSB_KEY")
 
-	pairs := util.NewFieldPairs(values)
-	for _, p := range pairs {
-		args = append(args, p.Value)
-		buf.WriteString(" ,")
-		buf.WriteString(p.Field)
+		pairs := util.NewFieldPairs(values)
+		for _, p := range pairs {
+			args = append(args, p.Value)
+			buf.WriteString(" ,")
+			buf.WriteString(p.Field)
+		}
+		buf.WriteString(") VALUES (?")
+
+		for i := 0; i < len(pairs); i++ {
+			buf.WriteString(" ,?")
+		}
+
+		buf.WriteByte(')')
+		err = db.execQuery(ctx, buf.String(), args...)
 	}
-	buf.WriteString(") VALUES (?")
-
-	for i := 0; i < len(pairs); i++ {
-		buf.WriteString(" ,?")
-	}
-
-	buf.WriteByte(')')
-
-	return db.execQuery(ctx, buf.String(), args...)
+	return err
 }
 
 func (db *mysqlDB) Delete(ctx context.Context, table string, key string) error {
