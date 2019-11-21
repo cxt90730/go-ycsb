@@ -22,6 +22,7 @@ const (
 	useHttps        = "s3.useHttps"
 	disableMd5Check = "s3.disableMd5"
 	dataLength      = "s3.dataLength"
+	headSwitch      = "s3.headSwitch"
 )
 
 type contextKey string
@@ -38,6 +39,7 @@ type s3Options struct {
 	useHttps        bool
 	disableMd5Check bool
 	dataLength      uint64
+	switchHead      bool
 }
 
 type s3Client struct {
@@ -64,6 +66,7 @@ func getOptions(p *properties.Properties) s3Options {
 	s3UseHttps := p.GetBool(useHttps, false)
 	s3DisableMd5 := p.GetBool(disableMd5Check, false)
 	s3DataLength, err := humanize.ParseBytes(p.GetString(dataLength, "4KiB"))
+	s3HeadSwitch := p.GetBool(headSwitch, false)
 	if err != nil {
 		panic(err)
 	}
@@ -75,6 +78,7 @@ func getOptions(p *properties.Properties) s3Options {
 		useHttps:        s3UseHttps,
 		disableMd5Check: s3DisableMd5,
 		dataLength:      s3DataLength,
+		switchHead:      s3HeadSwitch,
 	}
 }
 
@@ -124,24 +128,35 @@ func (c *s3Client) CleanupThread(ctx context.Context) {
 // table: The name of the table.
 // key: The record key of the record to read.
 // fields: The list of fields to read, nil|empty for reading all.
-func (c *s3Client) Read(ctx context.Context, table string, key string, fields []string) (map[string][]byte, error) {
+func (c *s3Client) Read(ctx context.Context, table string, key string, fields []string) (result map[string][]byte, err error) {
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
-	input := &s3.GetObjectInput{
-		Bucket: aws.String(state.b),
-		Key:    aws.String(key),
+	if !c.p.switchHead {
+		input := &s3.GetObjectInput{
+			Bucket: aws.String(state.b),
+			Key:    aws.String(key),
+		}
+		object, err := client.GetObject(input)
+		if err != nil {
+			panic(err)
+		}
+		defer object.Body.Close()
+		data, err := ioutil.ReadAll(object.Body)
+		if err != nil {
+			panic(err)
+		}
+		result := make(map[string][]byte)
+		result[key] = data
+	} else {
+		input := &s3.HeadObjectInput{
+			Bucket: aws.String(state.b),
+			Key:    aws.String(key),
+		}
+		_, err := client.HeadObject(input)
+		if err != nil {
+			panic(err)
+		}
 	}
-	object, err := client.GetObject(input)
-	if err != nil {
-		return nil, err
-	}
-	defer object.Body.Close()
-	data, err := ioutil.ReadAll(object.Body)
-	if err != nil {
-                return nil, err
-        }
-	result := make(map[string][]byte)
-	result[key] = data
 	return result, nil
 }
 
@@ -225,7 +240,7 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	}
 	_, err = client.PutObject(input)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }
@@ -245,7 +260,7 @@ func (c *s3Client) Insert(ctx context.Context, table string, key string, values 
 	}
 	_, err := client.PutObject(input)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }
@@ -262,7 +277,7 @@ func (c *s3Client) Delete(ctx context.Context, table string, key string) error {
 	}
 	_, err := client.DeleteObject(input)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }
