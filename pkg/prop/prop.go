@@ -19,6 +19,7 @@ const (
 	InsertCount        = "insertcount"
 	InsertStartDefault = int64(0)
 
+	RandomKey          = "randomkey"
 	OperationCount     = "operationcount"
 	RecordCount        = "recordcount"
 	RecordCountDefault = int64(0)

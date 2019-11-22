@@ -63,6 +63,7 @@ type mysqlDB struct {
 	verbose           bool
 	forceIndexKeyword string
 	trans             bool
+	randomKey         bool
 
 	bufPool *util.BufPool
 }
@@ -103,6 +104,7 @@ func (c mysqlCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	password := p.GetString(mysqlPassword, "")
 	dbName := p.GetString(mysqlDBName, "test")
 	dbTrans := p.GetString(mysqlTrans, "false")
+	d.randomKey = p.GetBool(prop.RandomKey, false)
 
 	if dbTrans == "false" {
 		d.trans = false
@@ -375,9 +377,14 @@ func (db *mysqlDB) Update(ctx context.Context, table string, key string, values 
 }
 
 func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values map[string][]byte) (err error) {
-	var ibucketname, iname, iversion, ilocation, ipool, iownerId, isize, iobjectId, ilastModifiedTime, ietag, icontentType, icustomattributes, iacl, ioullVersion, ideleteMarker, isseType, iencryptionKey, iinitializationVector, itype, istorageClass string
+	var ibucketname, iname, iversion, ilocation, ipool, iownerId, isize, iobjectId, ilastModifiedTime, ietag, icontentType, icustomattributes, iacl, ioullVersion, ideleteMarker, isseType, iencryptionKey, iinitializationVector, itype, istorageClass, value string
 	args := make([]interface{}, 0, 1+len(values))
-	args = append(args, key)
+	if db.randomKey {
+		value = key + "_" + strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(rand.Int63(), 10)
+	} else {
+		value = key
+	}
+	args = append(args, value)
 
 	buf := db.bufPool.Get()
 	defer db.bufPool.Put(buf)
