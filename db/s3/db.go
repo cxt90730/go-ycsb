@@ -9,9 +9,13 @@ import (
 	"github.com/journeymidnight/aws-sdk-go/aws/session"
 	"github.com/journeymidnight/aws-sdk-go/service/s3"
 	"github.com/magiconair/properties"
+	"github.com/pingcap/go-ycsb/pkg/prop"
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
 	"io/ioutil"
+	"math/rand"
 	"sort"
+	"strconv"
+	"time"
 )
 
 const (
@@ -40,6 +44,7 @@ type s3Options struct {
 	disableMd5Check bool
 	dataLength      uint64
 	validHead       bool
+	randomKey       bool
 }
 
 type s3Client struct {
@@ -67,6 +72,8 @@ func getOptions(p *properties.Properties) s3Options {
 	s3DisableMd5 := p.GetBool(disableMd5Check, false)
 	s3DataLength, err := humanize.ParseBytes(p.GetString(dataLength, "4KiB"))
 	s3OnlyHead := p.GetBool(onlyHead, false)
+	random := p.GetBool(prop.RandomKey, false)
+	rand.Seed(time.Now().UnixNano())
 	if err != nil {
 		panic(err)
 	}
@@ -79,6 +86,7 @@ func getOptions(p *properties.Properties) s3Options {
 		disableMd5Check: s3DisableMd5,
 		dataLength:      s3DataLength,
 		validHead:       s3OnlyHead,
+		randomKey:       random,
 	}
 }
 
@@ -251,11 +259,17 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 // key: The record key of the record to insert.
 // values: A map of field/value pairs to insert in the record.
 func (c *s3Client) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
+	var value string
+	if c.p.randomKey {
+		value = key + "_" + strconv.FormatInt(rand.Int63(), 10)
+	} else {
+		value = key
+	}
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(state.b),
-		Key:    aws.String(key),
+		Key:    aws.String(value),
 		Body:   bytes.NewReader(state.d),
 	}
 	_, err := client.PutObject(input)
