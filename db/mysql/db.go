@@ -380,7 +380,7 @@ func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values 
 	var ibucketname, iname, iversion, ilocation, ipool, iownerId, isize, iobjectId, ilastModifiedTime, ietag, icontentType, icustomattributes, iacl, ioullVersion, ideleteMarker, isseType, iencryptionKey, iinitializationVector, itype, istorageClass, value string
 	args := make([]interface{}, 0, 1+len(values))
 	if db.randomKey {
-		value = key + "_" + strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(rand.Int63(), 10)
+		value = key + "_" + strconv.FormatInt(rand.Int63(), 10)
 	} else {
 		value = key
 	}

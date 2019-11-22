@@ -15,7 +15,6 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
-	"time"
 )
 
 const (
@@ -260,7 +259,7 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 func (c *s3Client) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	var value string
 	if c.p.randomKey {
-		value = key + "_" + strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(rand.Int63(), 10)
+		value = key + "_" + strconv.FormatInt(rand.Int63(), 10)
 	} else {
 		value = key
 	}
