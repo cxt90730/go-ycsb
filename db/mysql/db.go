@@ -105,7 +105,7 @@ func (c mysqlCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	dbName := p.GetString(mysqlDBName, "test")
 	dbTrans := p.GetString(mysqlTrans, "false")
 	d.randomKey = p.GetBool(prop.RandomKey, false)
-
+	rand.Seed(time.Now().UnixNano())
 	if dbTrans == "false" {
 		d.trans = false
 	} else {

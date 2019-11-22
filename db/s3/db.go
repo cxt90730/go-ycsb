@@ -15,6 +15,7 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
+	"time"
 )
 
 const (
@@ -72,6 +73,7 @@ func getOptions(p *properties.Properties) s3Options {
 	s3DataLength, err := humanize.ParseBytes(p.GetString(dataLength, "4KiB"))
 	s3OnlyHead := p.GetBool(onlyHead, false)
 	random := p.GetBool(prop.RandomKey, false)
+	rand.Seed(time.Now().UnixNano())
 	if err != nil {
 		panic(err)
 	}
