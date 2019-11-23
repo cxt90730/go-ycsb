@@ -10,11 +10,13 @@ import (
 	"math/rand"
 	"os"
 	"time"
+	"github.com/dustin/go-humanize"
 )
 
 const (
-	cephPath = "ceph.path"
-	poolName = "ceph.pool"
+	cephPath   = "ceph.path"
+	poolName   = "ceph.pool"
+	objectSize = "ceph.objectSize"
 
 	MON_TIMEOUT                = "10"
 	OSD_TIMEOUT                = "10"
@@ -37,6 +39,7 @@ type radosCreator struct{}
 type radosOptions struct {
 	Path string
 	Pool string
+	Size uint64
 }
 
 type radosClient struct {
@@ -45,6 +48,7 @@ type radosClient struct {
 	pool       string
 	fsid       string
 	instanceId uint64
+	size       uint64
 }
 
 type radosState struct {
@@ -94,7 +98,8 @@ func (r radosCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 		conn:       conn,
 		fsid:       fsid,
 		instanceId: id,
-		pool: opts.Pool,
+		pool:       opts.Pool,
+		size:       opts.Size,
 	}
 	return c, nil
 }
@@ -102,9 +107,14 @@ func (r radosCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 func getOptions(p *properties.Properties) radosOptions {
 	path := p.GetString(cephPath, "/etc/ceph.conf")
 	pool := p.GetString(poolName, "rabbit")
+	size, err := humanize.ParseBytes(p.GetString(objectSize, "4KiB"))
+	if err != nil {
+		panic(err)
+	}
 	return radosOptions{
 		Path: path,
 		Pool: pool,
+		Size: size,
 	}
 }
 
@@ -117,16 +127,15 @@ func (r *radosClient) Close() error {
 // InitThread initializes the state associated to the goroutine worker.
 // The Returned context will be passed to the following usage.
 func (r *radosClient) InitThread(ctx context.Context, threadID int, threadCount int) context.Context {
-
-	mockData4K := make([]byte, 4<<10)
-	for i := 0; i < len(mockData4K); i++ {
-		mockData4K[i] = uint8(i%255)
+	mockData := make([]byte, r.size)
+	for i := 0; i < len(mockData); i++ {
+		mockData[i] = uint8(i % 255)
 	}
 
 	state := &radosState{
 		pool: r.pool,
-		data: mockData4K,
-		oid : fmt.Sprintf("%d_%d_%d", r.instanceId, time.Now().UnixNano(), rand.Uint64()),
+		data: mockData,
+		oid:  fmt.Sprintf("%d_%d_%d", r.instanceId, time.Now().UnixNano(), rand.Uint64()),
 	}
 	return context.WithValue(ctx, stateKey, state)
 }
@@ -143,7 +152,18 @@ func (r *radosClient) CleanupThread(ctx context.Context) {
 // key: The record key of the record to read.
 // fields: The list of fields to read, nil|empty for reading all.
 func (r *radosClient) Read(ctx context.Context, table string, key string, fields []string) (map[string][]byte, error) {
-	return nil, nil
+	state := ctx.Value(stateKey).(*radosState)
+	pool, err := r.conn.OpenPool(state.pool)
+	if err != nil {
+		panic(err)
+	}
+	defer pool.Destroy()
+	p := make([]byte, int(r.size))
+	_, err = pool.Read(state.oid, p, 0)
+	if err != nil {
+		return nil, err
+	}
+	return map[string][]byte{key:{}}, nil
 }
 
 // Scan scans records from the database.
@@ -175,6 +195,7 @@ func (r *radosClient) Insert(ctx context.Context, table string, key string, valu
 	if err != nil {
 		panic(err)
 	}
+	defer pool.Destroy()
 	return pool.WriteSmallObject(state.oid, state.data)
 }
 
