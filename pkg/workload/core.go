@@ -172,8 +172,8 @@ func (c *core) buildKeyName(keyNum int64) string {
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
 				ipKey = ipnet.IP.String()
+				break
 			}
-
 		}
 	}
 	prefix = ipKey + "_" + prefix
