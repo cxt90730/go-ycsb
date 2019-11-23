@@ -71,12 +71,13 @@ func getOptions(p *properties.Properties) s3Options {
 	s3UseHttps := p.GetBool(useHttps, false)
 	s3DisableMd5 := p.GetBool(disableMd5Check, false)
 	s3DataLength, err := humanize.ParseBytes(p.GetString(dataLength, "4KiB"))
-	s3OnlyHead := p.GetBool(onlyHead, false)
-	random := p.GetBool(prop.RandomKey, false)
-	rand.Seed(time.Now().UnixNano())
 	if err != nil {
 		panic(err)
 	}
+	s3OnlyHead := p.GetBool(onlyHead, false)
+	random := p.GetBool(prop.RandomKey, false)
+	rand.Seed(time.Now().UnixNano())
+
 	return s3Options{
 		endpoint:        s3Endpoint,
 		accessKey:       s3AccessKey,
