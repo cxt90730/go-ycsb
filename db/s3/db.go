@@ -146,12 +146,12 @@ func (c *s3Client) Read(ctx context.Context, table string, key string, fields []
 		}
 		object, err := client.GetObject(input)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		defer object.Body.Close()
 		data, err := ioutil.ReadAll(object.Body)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		result := make(map[string][]byte)
 		result[key] = data
@@ -162,7 +162,7 @@ func (c *s3Client) Read(ctx context.Context, table string, key string, fields []
 		}
 		_, err := client.HeadObject(input)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 	return result, nil
@@ -185,7 +185,7 @@ func (c *s3Client) Scan(ctx context.Context, table string, startKey string, coun
 	}
 	list, err := client.ListObjects(params)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	var listSort []string
 	for _, v := range list.Contents {
@@ -214,7 +214,7 @@ func (c *s3Client) Scan(ctx context.Context, table string, startKey string, coun
 		}
 		object, err := client.GetObject(input)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		data, err := ioutil.ReadAll(object.Body)
 		param[key] = data
@@ -237,7 +237,7 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	}
 	out, err := client.GetObject(params)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	data, err := ioutil.ReadAll(out.Body)
 	input := &s3.PutObjectInput{
@@ -248,7 +248,7 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	}
 	_, err = client.PutObject(input)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }

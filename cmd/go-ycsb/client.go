@@ -39,6 +39,16 @@ func runClientCommandFunc(cmd *cobra.Command, args []string, doTransactions bool
 			globalProps.Set(prop.ThreadCount, strconv.Itoa(threadsArg))
 		}
 
+		if cmd.Flags().Changed("silence") {
+			// We set the threadArg via command line.
+			globalProps.Set(prop.Silence, strconv.FormatBool(silenceArg))
+		}
+
+		if cmd.Flags().Changed("panic") {
+			// We set the threadArg via command line.
+			globalProps.Set(prop.Panic, strconv.FormatBool(panicArg))
+		}
+
 		if cmd.Flags().Changed("target") {
 			globalProps.Set(prop.Target, strconv.Itoa(targetArg))
 		}
@@ -69,6 +79,8 @@ func runTransCommandFunc(cmd *cobra.Command, args []string) {
 var (
 	threadsArg int
 	targetArg  int
+	panicArg   bool
+	silenceArg bool
 )
 
 func initClientCommand(m *cobra.Command) {
@@ -77,6 +89,8 @@ func initClientCommand(m *cobra.Command) {
 	m.Flags().StringVar(&tableName, "table", "", "Use the table name instead of the default \""+prop.TableNameDefault+"\"")
 	m.Flags().IntVar(&threadsArg, "threads", 1, "Execute using n threads - can also be specified as the \"threadcount\" property")
 	m.Flags().IntVar(&targetArg, "target", 0, "Attempt to do n operations per second (default: unlimited) - can also be specified as the \"target\" property")
+	m.Flags().BoolVar(&panicArg, "panic", false, "Panic on error.")
+	m.Flags().BoolVar(&silenceArg, "silence", true, "Silence on error.")
 }
 
 func newLoadCommand() *cobra.Command {

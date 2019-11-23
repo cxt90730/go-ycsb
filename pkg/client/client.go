@@ -134,9 +134,15 @@ func (w *worker) run(ctx context.Context) {
 			}
 		}
 
-		if err != nil && !w.p.GetBool(prop.Silence, prop.SilenceDefault) {
-			fmt.Printf("operation err: %v\n", err)
+		if err != nil {
+			if !w.p.GetBool(prop.Silence, prop.SilenceDefault) {
+				fmt.Printf("operation err: %v\n", err)
+			}
+			if w.p.GetBool(prop.Panic, prop.PanicDefault) {
+				panic(err)
+			}
 		}
+
 
 		if measurement.IsWarmUpFinished() {
 			w.opsDone += int64(opsCount)

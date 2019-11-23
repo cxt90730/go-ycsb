@@ -107,4 +107,8 @@ const (
 
 	KeyPrefix        = "keyprefix"
 	KeyPrefixDefault = "user"
+
+	Panic = "panic"
+	PanicDefault = false
+
 )
