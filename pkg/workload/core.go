@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -37,7 +38,7 @@ type contextKey string
 const stateKey = contextKey("core")
 
 type coreState struct {
-	r          *rand.Rand
+	r *rand.Rand
 	// fieldNames is a copy of core.fieldNames to be goroutine-local
 	fieldNames []string
 }
@@ -161,6 +162,21 @@ func (c *core) buildKeyName(keyNum int64) string {
 	}
 
 	prefix := c.p.GetString(prop.KeyPrefix, prop.KeyPrefixDefault)
+
+	var ipKey string
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		panic(err)
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				ipKey = ipnet.IP.String()
+				break
+			}
+		}
+	}
+	prefix = ipKey + "_" + prefix
 	return fmt.Sprintf("%s%0[3]*[2]d", prefix, keyNum, c.zeroPadding)
 }
 
