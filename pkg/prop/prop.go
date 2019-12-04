@@ -19,7 +19,6 @@ const (
 	InsertCount        = "insertcount"
 	InsertStartDefault = int64(0)
 
-	RandomKey          = "randomkey"
 	OperationCount     = "operationcount"
 	RecordCount        = "recordcount"
 	RecordCountDefault = int64(0)
@@ -105,6 +104,8 @@ const (
 	Silence        = "silence"
 	SilenceDefault = true
 
+	RandomKey          = "randomkey"
+	RandomKeyDefault   = false
 	KeyPrefix        = "keyprefix"
 	KeyPrefixDefault = "user"
 

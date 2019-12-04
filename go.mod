@@ -35,6 +35,8 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4 // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/journeymidnight/aws-sdk-go v1.18.1
+	github.com/journeymidnight/radoshttpd v0.0.0-20190911073816-6df3523aa9e3
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/lib/pq v0.0.0-20181016162627-9eb73efc1fcc
 	github.com/magiconair/properties v1.8.0
@@ -48,7 +50,6 @@ require (
 	github.com/rogpeppe/go-internal v1.3.2 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20181010114359-8752a9433481
 	github.com/tidwall/pretty v1.0.0 // indirect
 	github.com/tikv/client-go v0.0.0-20190421092910-44b82dcc9f4a

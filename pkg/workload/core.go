@@ -157,13 +157,17 @@ func (c *core) Close() error {
 	return nil
 }
 
-func (c *core) buildKeyName(keyNum int64) string {
+func (c *core) buildKeyName(ctx context.Context, keyNum int64) string {
 	if !c.orderedInserts {
 		keyNum = util.Hash64(keyNum)
 	}
-
 	prefix := c.p.GetString(prop.KeyPrefix, prop.KeyPrefixDefault)
 	prefix = c.keyDefault + "_" + prefix
+	if c.p.GetBool(prop.RandomKey, prop.RandomKeyDefault) {
+		state := ctx.Value(stateKey).(*coreState)
+		r := state.r
+		prefix = strconv.Itoa(r.Intn(1000)) + prefix
+	}
 	return fmt.Sprintf("%s%0[3]*[2]d", prefix, keyNum, c.zeroPadding)
 }
 
@@ -261,7 +265,7 @@ func (c *core) DoInsert(ctx context.Context, db ycsb.DB) error {
 	state := ctx.Value(stateKey).(*coreState)
 	r := state.r
 	keyNum := c.keySequence.Next(r)
-	dbKey := c.buildKeyName(keyNum)
+	dbKey := c.buildKeyName(ctx, keyNum)
 	values := c.buildValues(state, dbKey)
 	defer c.putValues(values)
 
@@ -311,7 +315,7 @@ func (c *core) DoBatchInsert(ctx context.Context, batchSize int, db ycsb.DB) err
 	var values []map[string][]byte
 	for i := 0; i < batchSize; i++ {
 		keyNum := c.keySequence.Next(r)
-		dbKey := c.buildKeyName(keyNum)
+		dbKey := c.buildKeyName(ctx, keyNum)
 		keys = append(keys, dbKey)
 		values = append(values, c.buildValues(state, dbKey))
 	}
@@ -417,7 +421,7 @@ func (c *core) nextKeyNum(state *coreState) int64 {
 func (c *core) doTransactionRead(ctx context.Context, db ycsb.DB, state *coreState) error {
 	r := state.r
 	keyNum := c.nextKeyNum(state)
-	keyName := c.buildKeyName(keyNum)
+	keyName := c.buildKeyName(ctx, keyNum)
 
 	var fields []string
 	if !c.readAllFields {
@@ -447,7 +451,7 @@ func (c *core) doTransactionReadModifyWrite(ctx context.Context, db ycsb.DB, sta
 
 	r := state.r
 	keyNum := c.nextKeyNum(state)
-	keyName := c.buildKeyName(keyNum)
+	keyName := c.buildKeyName(ctx, keyNum)
 
 	var fields []string
 	if !c.readAllFields {
@@ -485,7 +489,7 @@ func (c *core) doTransactionInsert(ctx context.Context, db ycsb.DB, state *coreS
 	r := state.r
 	keyNum := c.transactionInsertKeySequence.Next(r)
 	defer c.transactionInsertKeySequence.Acknowledge(keyNum)
-	dbKey := c.buildKeyName(keyNum)
+	dbKey := c.buildKeyName(ctx, keyNum)
 	values := c.buildValues(state, dbKey)
 	defer c.putValues(values)
 
@@ -495,7 +499,7 @@ func (c *core) doTransactionInsert(ctx context.Context, db ycsb.DB, state *coreS
 func (c *core) doTransactionScan(ctx context.Context, db ycsb.DB, state *coreState) error {
 	r := state.r
 	keyNum := c.nextKeyNum(state)
-	startKeyName := c.buildKeyName(keyNum)
+	startKeyName := c.buildKeyName(ctx, keyNum)
 
 	scanLen := c.scanLength.Next(r)
 
@@ -514,7 +518,7 @@ func (c *core) doTransactionScan(ctx context.Context, db ycsb.DB, state *coreSta
 
 func (c *core) doTransactionUpdate(ctx context.Context, db ycsb.DB, state *coreState) error {
 	keyNum := c.nextKeyNum(state)
-	keyName := c.buildKeyName(keyNum)
+	keyName := c.buildKeyName(ctx, keyNum)
 
 	var values map[string][]byte
 	if c.writeAllFields {
@@ -541,7 +545,7 @@ func (c *core) doBatchTransactionRead(ctx context.Context, batchSize int, db ycs
 
 	keys := make([]string, batchSize)
 	for i := 0; i < batchSize; i++ {
-		keys[i] = c.buildKeyName(c.nextKeyNum(state))
+		keys[i] = c.buildKeyName(ctx, c.nextKeyNum(state))
 	}
 
 	_, err := db.BatchRead(ctx, c.table, keys, fields)
@@ -559,7 +563,7 @@ func (c *core) doBatchTransactionInsert(ctx context.Context, batchSize int, db y
 	values := make([]map[string][]byte, batchSize)
 	for i := 0; i < batchSize; i++ {
 		keyNum := c.transactionInsertKeySequence.Next(r)
-		keyName := c.buildKeyName(keyNum)
+		keyName := c.buildKeyName(ctx, keyNum)
 		keys[i] = keyName
 		if c.writeAllFields {
 			values[i] = c.buildValues(state, keyName)
@@ -583,7 +587,7 @@ func (c *core) doBatchTransactionUpdate(ctx context.Context, batchSize int, db y
 	values := make([]map[string][]byte, batchSize)
 	for i := 0; i < batchSize; i++ {
 		keyNum := c.nextKeyNum(state)
-		keyName := c.buildKeyName(keyNum)
+		keyName := c.buildKeyName(ctx, keyNum)
 		keys[i] = keyName
 		if c.writeAllFields {
 			values[i] = c.buildValues(state, keyName)
