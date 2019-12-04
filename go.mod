@@ -36,7 +36,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/journeymidnight/aws-sdk-go v1.18.1
-	github.com/journeymidnight/radoshttpd v0.0.0-20190911073816-6df3523aa9e3
+	github.com/journeymidnight/radoshttpd v0.0.0-20190617133011-609666b51136
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/lib/pq v0.0.0-20181016162627-9eb73efc1fcc
 	github.com/magiconair/properties v1.8.0
