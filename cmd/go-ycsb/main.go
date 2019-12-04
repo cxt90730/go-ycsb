@@ -71,6 +71,8 @@ import (
 	_ "github.com/pingcap/go-ycsb/db/s3"
 
 	_ "github.com/pingcap/go-ycsb/db/mock"
+	// Register minio
+	_ "github.com/pingcap/go-ycsb/db/minio"
 )
 
 var (

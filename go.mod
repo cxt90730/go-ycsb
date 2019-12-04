@@ -21,36 +21,35 @@ require (
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
-	github.com/go-redis/redis v6.15.6+incompatible
+
+	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
+	github.com/go-ini/ini v1.49.0 // indirect
+	github.com/go-redis/redis v6.15.1+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
-	github.com/gocql/gocql v0.0.0-20191018090344-07ace3bab0f8
-	github.com/gogo/protobuf v1.3.1 // indirect
-	github.com/golang/groupcache v0.0.0-20191002201903-404acd9df4cc // indirect
-	github.com/google/btree v1.0.0 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/gocql/gocql v0.0.0-20181124151448-70385f88b28b
+	github.com/gogo/protobuf v1.2.0 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
-	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
-	github.com/journeymidnight/aws-sdk-go v1.18.1
-	github.com/journeymidnight/radoshttpd v0.0.0-20190617133011-609666b51136
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/lib/pq v1.2.0
-	github.com/magiconair/properties v1.8.1
-	github.com/mattn/go-sqlite3 v1.11.0
-	github.com/onsi/ginkgo v1.10.2 // indirect
-	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/pingcap/errors v0.11.4
-	github.com/pingcap/kvproto v0.0.0-20191022073741-81b2a2d9e986 // indirect
-	github.com/pingcap/log v0.0.0-20191012051959-b742a5d432e9 // indirect
-	github.com/pingcap/pd v2.1.17+incompatible // indirect
-	github.com/prometheus/client_golang v1.2.1 // indirect
-	github.com/remyoudompheng/bigfft v0.0.0-20190728182440-6a916e37a237 // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/spf13/cobra v0.0.5
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/tecbot/gorocksdb v0.0.0-20191019123150-400c56251341
+	github.com/google/pprof v0.0.0-20190908185732-236ed259b199 // indirect
+	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4 // indirect
+	github.com/hashicorp/golang-lru v0.5.3 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/kr/pty v1.1.8 // indirect
+	github.com/lib/pq v0.0.0-20181016162627-9eb73efc1fcc
+	github.com/magiconair/properties v1.8.0
+	github.com/mattn/go-sqlite3 v1.10.0
+	github.com/minio/minio-go v6.0.14+incompatible
+	github.com/minio/minio-go/v6 v6.0.39 // indirect
+	github.com/openzipkin/zipkin-go v0.1.1 // indirect
+	github.com/pingcap/errors v0.11.1
+	github.com/pingcap/kvproto v0.0.0-20190506024016-26344dff8f48 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20190512091148-babf20351dd7 // indirect
+	github.com/rogpeppe/go-internal v1.3.2 // indirect
+	github.com/spf13/cobra v0.0.3
+	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/stretchr/testify v1.3.0 // indirect
+	github.com/tecbot/gorocksdb v0.0.0-20181010114359-8752a9433481
 	github.com/tidwall/pretty v1.0.0 // indirect
 	github.com/tikv/client-go v0.0.0-20190421092910-44b82dcc9f4a
 	github.com/unrolled/render v1.0.1 // indirect

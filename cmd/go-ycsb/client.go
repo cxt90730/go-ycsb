@@ -52,6 +52,10 @@ func runClientCommandFunc(cmd *cobra.Command, args []string, doTransactions bool
 		if cmd.Flags().Changed("target") {
 			globalProps.Set(prop.Target, strconv.Itoa(targetArg))
 		}
+
+		if cmd.Flags().Changed("random") {
+			globalProps.Set(prop.RandomKey, strconv.FormatBool(randomKeyArg))
+		}
 	})
 
 	fmt.Println("***************** properties *****************")
@@ -77,10 +81,11 @@ func runTransCommandFunc(cmd *cobra.Command, args []string) {
 }
 
 var (
-	threadsArg int
-	targetArg  int
-	panicArg   bool
-	silenceArg bool
+	threadsArg   int
+	targetArg    int
+	panicArg     bool
+	silenceArg   bool
+	randomKeyArg bool
 )
 
 func initClientCommand(m *cobra.Command) {
@@ -91,6 +96,7 @@ func initClientCommand(m *cobra.Command) {
 	m.Flags().IntVar(&targetArg, "target", 0, "Attempt to do n operations per second (default: unlimited) - can also be specified as the \"target\" property")
 	m.Flags().BoolVar(&panicArg, "panic", false, "Panic on error.")
 	m.Flags().BoolVar(&silenceArg, "silence", true, "Silence on error.")
+	m.Flags().BoolVar(&randomKeyArg, "random", false, "Generate random key.")
 }
 
 func newLoadCommand() *cobra.Command {
