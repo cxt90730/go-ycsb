@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"net"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -77,6 +77,7 @@ type core struct {
 	zeroPadding                  int64
 	insertionRetryLimit          int64
 	insertionRetryInterval       int64
+	keyDefault                   string
 
 	valuePool sync.Pool
 }
@@ -162,21 +163,7 @@ func (c *core) buildKeyName(keyNum int64) string {
 	}
 
 	prefix := c.p.GetString(prop.KeyPrefix, prop.KeyPrefixDefault)
-
-	var ipKey string
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		panic(err)
-	}
-	for _, address := range addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				ipKey = ipnet.IP.String()
-				break
-			}
-		}
-	}
-	prefix = ipKey + "_" + prefix
+	prefix = c.keyDefault + "_" + prefix
 	return fmt.Sprintf("%s%0[3]*[2]d", prefix, keyNum, c.zeroPadding)
 }
 
@@ -637,6 +624,12 @@ func (coreCreator) Create(p *properties.Properties) (ycsb.Workload, error) {
 	requestDistrib := p.GetString(prop.RequestDistribution, prop.RequestDistributionDefault)
 	maxScanLength := p.GetInt64(prop.MaxScanLength, prop.MaxScanLengthDefault)
 	scanLengthDistrib := p.GetString(prop.ScanLengthDistribution, prop.ScanLengthDistributionDefault)
+
+	host, err := os.Hostname()
+	if err != nil {
+		fmt.Printf("%s", err)
+	}
+	c.keyDefault = host
 
 	insertStart := p.GetInt64(prop.InsertStart, prop.InsertStartDefault)
 	insertCount := p.GetInt64(prop.InsertCount, c.recordCount-insertStart)
