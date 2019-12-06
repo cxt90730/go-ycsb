@@ -42,6 +42,7 @@ const (
 	mysqlDBName     = "mysql.db"
 	mysqlForceIndex = "mysql.force_index"
 	mysqlTrans      = "mysql.transaction"
+	mysqlTable      = "mysql.table"
 	// TODO: support batch and auto commit
 )
 
@@ -64,6 +65,7 @@ type mysqlDB struct {
 	forceIndexKeyword string
 	trans             bool
 	randomKey         bool
+	table			  string
 
 	bufPool *util.BufPool
 }
@@ -105,6 +107,7 @@ func (c mysqlCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	dbName := p.GetString(mysqlDBName, "test")
 	dbTrans := p.GetString(mysqlTrans, "false")
 	d.randomKey = p.GetBool(prop.RandomKey, false)
+	d.table = p.GetString(mysqlTable, "hehe")
 	rand.Seed(time.Now().UnixNano())
 	if dbTrans == "false" {
 		d.trans = false
@@ -389,7 +392,7 @@ func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values 
 	buf := db.bufPool.Get()
 	defer db.bufPool.Put(buf)
 
-	if table == "objects" { //If you specify a table name and the table name is objects, execute the method
+	if db.table == "objects" { //If you specify a table name and the table name is objects, execute the method
 		bucketName := "test_for_ycsb"
 		name := strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(rand.Int63(), 10)
 		sqltext := "select bucketname,name,version,location,pool,ownerid,size,objectid,lastmodifiedtime,etag,contenttype," +
