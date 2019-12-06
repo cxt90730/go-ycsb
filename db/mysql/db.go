@@ -396,7 +396,8 @@ func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values 
 		bucketName := "test_for_ycsb"
 		name := strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + strconv.FormatInt(rand.Int63(), 10)
 		sqltext := "select bucketname,name,version,location,pool,ownerid,size,objectid,lastmodifiedtime,etag,contenttype," +
-			"customattributes,acl,nullversion,deletemarker,ssetype,encryptionkey,initializationvector,type,storageclass from objects where bucketname=? and name=? order by bucketname,name,version limit 1"
+			"customattributes,acl,nullversion,deletemarker,ssetype,encryptionkey,initializationvector,type,storageclass,createtime from objects where bucketname=? and name=? "
+		sqltext += "and version=0"
 		row := db.db.QueryRow(sqltext, bucketName, name)
 		err = row.Scan(
 			&ibucketname,
@@ -420,11 +421,10 @@ func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values 
 			&itype,
 			&istorageClass,
 		)
-		buf.WriteString("INSERT IGNORE INTO ")
-		buf.WriteString(table)
-		buf.WriteString(" (bucketname,name,version,location,pool,ownerid,size,objectid,lastmodifiedtime,etag,contenttype,customattributes,acl,nullversion,deletemarker,ssetype,encryptionkey,initializationvector,type,storageclass) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-		v := math.MaxUint64 - uint64(time.Now().UnixNano())
-		version := strconv.FormatUint(v, 10)
+		insert_sql := "insert into objects(bucketname,name,version,location,pool,ownerid,size,objectid,lastmodifiedtime,etag," +
+			"contenttype,customattributes,acl,nullversion,deletemarker,ssetype,encryptionkey,initializationvector,type,storageclass,createtime) " +
+			"values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+		version := 0
 		location := "5f385d64-f877-4981-91a1-87befa409c84"
 		pool := "tiger"
 		ownerid := "3cebb65c-0a85-4b32-9f86-b527adee8f24"
@@ -449,7 +449,9 @@ func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values 
 		initializationvector := "NULL"
 		typetype := "0"
 		storageclass := "0"
-		err = db.execQuery(ctx, buf.String(), bucketName, name, version, location, pool, ownerid, size, objectid, lastmodifiedtime, etag, contenttype, customattributes, acl, nullversion, deletemarker, ssetype, encryptionkey, initializationvector, typetype, storageclass)
+		createtime := time.Now().UnixNano()
+		err = db.execQuery(ctx, insert_sql , bucketName, name, version, location, pool, ownerid, size, objectid, lastmodifiedtime,
+			etag, contenttype, customattributes, acl, nullversion, deletemarker, ssetype, encryptionkey, initializationvector, typetype, storageclass, createtime)
 	} else {
 		buf.WriteString("INSERT IGNORE INTO ")
 		buf.WriteString(table)
