@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/pingcap/go-ycsb/pkg/prop"
 	"github.com/pingcap/go-ycsb/pkg/util"
-	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -65,7 +64,7 @@ type mysqlDB struct {
 	forceIndexKeyword string
 	trans             bool
 	randomKey         bool
-	table			  string
+	table             string
 
 	bufPool *util.BufPool
 }
@@ -450,7 +449,7 @@ func (db *mysqlDB) Insert(ctx context.Context, table string, key string, values 
 		typetype := "0"
 		storageclass := "0"
 		createtime := time.Now().UnixNano()
-		err = db.execQuery(ctx, insert_sql , bucketName, name, version, location, pool, ownerid, size, objectid, lastmodifiedtime,
+		err = db.execQuery(ctx, insert_sql, bucketName, name, version, location, pool, ownerid, size, objectid, lastmodifiedtime,
 			etag, contenttype, customattributes, acl, nullversion, deletemarker, ssetype, encryptionkey, initializationvector, typetype, storageclass, createtime)
 	} else {
 		buf.WriteString("INSERT IGNORE INTO ")
