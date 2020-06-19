@@ -23,6 +23,7 @@ const (
 	accessKey       = "s3.accessKeyId"
 	secretKey       = "s3.secretKey"
 	bucket          = "s3.bucket"
+	storageClass    = "s3.storageclass"
 	useHttps        = "s3.useHttps"
 	disableMd5Check = "s3.disableMd5"
 	dataLength      = "s3.dataLength"
@@ -40,6 +41,7 @@ type s3Options struct {
 	accessKey       string
 	secretKey       string
 	bucket          string
+	storageClass    string
 	useHttps        bool
 	disableMd5Check bool
 	dataLength      uint64
@@ -68,6 +70,7 @@ func getOptions(p *properties.Properties) s3Options {
 	s3AccessKey := p.GetString(accessKey, "hehehehe")
 	s3SecretKey := p.GetString(secretKey, "hehehehe")
 	s3Bucket := p.GetString(bucket, "hehe")
+	s3StorageClass := p.GetString(storageClass, "STANDARD")
 	s3UseHttps := p.GetBool(useHttps, false)
 	s3DisableMd5 := p.GetBool(disableMd5Check, false)
 	s3DataLength, err := humanize.ParseBytes(p.GetString(dataLength, "4KiB"))
@@ -83,6 +86,7 @@ func getOptions(p *properties.Properties) s3Options {
 		accessKey:       s3AccessKey,
 		secretKey:       s3SecretKey,
 		bucket:          s3Bucket,
+		storageClass:    s3StorageClass,
 		useHttps:        s3UseHttps,
 		disableMd5Check: s3DisableMd5,
 		dataLength:      s3DataLength,
@@ -242,10 +246,11 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 	}
 	data, err := ioutil.ReadAll(out.Body)
 	input := &s3.PutObjectInput{
-		Bucket:   aws.String(state.b),
-		Key:      aws.String(key),
-		Body:     bytes.NewReader(data),
-		Metadata: out.Metadata,
+		Bucket:       aws.String(state.b),
+		Key:          aws.String(key),
+		StorageClass: aws.String(c.p.storageClass),
+		Body:         bytes.NewReader(data),
+		Metadata:     out.Metadata,
 	}
 	_, err = client.PutObject(input)
 	if err != nil {
@@ -269,9 +274,10 @@ func (c *s3Client) Insert(ctx context.Context, table string, key string, values 
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
 	input := &s3.PutObjectInput{
-		Bucket: aws.String(state.b),
-		Key:    aws.String(value),
-		Body:   bytes.NewReader(state.d),
+		Bucket:       aws.String(state.b),
+		Key:          aws.String(value),
+		StorageClass: aws.String(c.p.storageClass),
+		Body:         bytes.NewReader(state.d),
 	}
 	_, err := client.PutObject(input)
 	if err != nil {
