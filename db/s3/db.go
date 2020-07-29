@@ -3,6 +3,7 @@ package s3
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/journeymidnight/aws-sdk-go/aws"
 	"github.com/journeymidnight/aws-sdk-go/aws/credentials"
@@ -111,6 +112,7 @@ func getOptions(p *properties.Properties) s3Options {
 
 // Close closes the database layer.
 func (c *s3Client) Close() error {
+	fmt.Println("Finished!")
 	return nil
 }
 
