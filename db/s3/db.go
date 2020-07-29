@@ -68,7 +68,7 @@ func (s s3Creator) Create(p *properties.Properties) (ycsb.DB, error) {
 		client := newS3(opt)
 		for i := 0; i < len(BucketPrefix); i++ {
 			input := &s3.CreateBucketInput{
-				Bucket:       aws.String(string(BucketPrefix[i]) + opt.bucket),
+				Bucket: aws.String(string(BucketPrefix[i]) + opt.bucket),
 			}
 			client.CreateBucket(input)
 		}
@@ -289,8 +289,10 @@ func (c *s3Client) Insert(ctx context.Context, table string, key string, values 
 	}
 
 	if c.p.randomBucket {
-		pre := string(BucketPrefix[rand.Int() % len(BucketPrefix)])
+		pre := string(BucketPrefix[rand.Int()%len(BucketPrefix)])
 		bucket = pre + c.p.bucket
+	} else {
+		bucket = c.p.bucket
 	}
 
 	state := ctx.Value(stateKey).(*s3State)
