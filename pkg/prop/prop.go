@@ -104,12 +104,12 @@ const (
 	Silence        = "silence"
 	SilenceDefault = true
 
-	RandomKey          = "randomkey"
-	RandomKeyDefault   = false
+	RandomKey        = "randomkey"
+	RandomKeyDefault = false
+	RandomBucket     = "randombucket"
 	KeyPrefix        = "keyprefix"
 	KeyPrefixDefault = "user"
 
-	Panic = "panic"
+	Panic        = "panic"
 	PanicDefault = false
-
 )

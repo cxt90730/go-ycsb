@@ -33,6 +33,7 @@ const (
 type contextKey string
 
 const stateKey = contextKey("s3Client")
+const BucketPrefix = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 type s3Creator struct{}
 
@@ -47,6 +48,7 @@ type s3Options struct {
 	dataLength      uint64
 	validHead       bool
 	randomKey       bool
+	randomBucket    bool
 }
 
 type s3Client struct {
@@ -60,8 +62,18 @@ type s3State struct {
 }
 
 func (s s3Creator) Create(p *properties.Properties) (ycsb.DB, error) {
+	opt := getOptions(p)
+	if opt.randomBucket {
+		client := newS3(opt)
+		for i := 0; i < len(BucketPrefix); i++ {
+			input := &s3.CreateBucketInput{
+				Bucket:       aws.String(string(BucketPrefix[i]) + opt.bucket),
+			}
+			client.CreateBucket(input)
+		}
+	}
 	return &s3Client{
-		p: getOptions(p),
+		p: opt,
 	}, nil
 }
 
@@ -79,6 +91,7 @@ func getOptions(p *properties.Properties) s3Options {
 	}
 	s3OnlyHead := p.GetBool(onlyHead, false)
 	random := p.GetBool(prop.RandomKey, false)
+	randomBucket := p.GetBool(prop.RandomBucket, false)
 	rand.Seed(time.Now().UnixNano())
 
 	return s3Options{
@@ -92,6 +105,7 @@ func getOptions(p *properties.Properties) s3Options {
 		dataLength:      s3DataLength,
 		validHead:       s3OnlyHead,
 		randomKey:       random,
+		randomBucket:    randomBucket,
 	}
 }
 
@@ -265,16 +279,22 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 // key: The record key of the record to insert.
 // values: A map of field/value pairs to insert in the record.
 func (c *s3Client) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
-	var value string
+	var bucket, value string
 	if c.p.randomKey {
 		value = key + "_" + strconv.FormatInt(rand.Int63(), 10)
 	} else {
 		value = key
 	}
+
+	if c.p.randomBucket {
+		pre := string(BucketPrefix[rand.Int() % len(BucketPrefix)])
+		bucket = pre + c.p.bucket
+	}
+
 	state := ctx.Value(stateKey).(*s3State)
 	client := state.c
 	input := &s3.PutObjectInput{
-		Bucket:       aws.String(state.b),
+		Bucket:       aws.String(bucket),
 		Key:          aws.String(value),
 		StorageClass: aws.String(c.p.storageClass),
 		Body:         bytes.NewReader(state.d),
