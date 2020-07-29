@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -281,7 +282,9 @@ func (c *s3Client) Update(ctx context.Context, table string, key string, values 
 // values: A map of field/value pairs to insert in the record.
 func (c *s3Client) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
 	var bucket string
-
+	if c.p.randomKey {
+		key = key + strconv.FormatInt(time.Now().UnixNano(), 10)
+	}
 	if c.p.randomBucket {
 		pre := string(BucketPrefix[rand.Int()%len(BucketPrefix)])
 		bucket = pre + c.p.bucket
