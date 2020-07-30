@@ -213,7 +213,6 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 	// Simulate TiDB data
 	buf := db.bufPool.Get()
 	defer db.bufPool.Put(buf)
-	fmt.Println("Buf:", string(buf.Bytes()))
 	rowData, err := db.r.Encode(buf.Bytes(), values)
 	if err != nil {
 		return err
@@ -225,7 +224,6 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 	}
 
 	defer tx.Rollback()
-	fmt.Println("Key:", string(db.getRowKey(table, key)), "Value len:", len(rowData))
 	if err = tx.Set(db.getRowKey(table, key), rowData); err != nil {
 		return err
 	}
