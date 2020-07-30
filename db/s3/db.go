@@ -14,6 +14,8 @@ import (
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
 	"io/ioutil"
 	"math/rand"
+	"net"
+	"net/http"
 	"sort"
 	"strconv"
 	"time"
@@ -118,8 +120,23 @@ func (c *s3Client) Close() error {
 
 func newS3(opts s3Options) *s3.S3 {
 	creds := credentials.NewStaticCredentials(opts.accessKey, opts.secretKey, "")
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   60 * time.Second,
+				KeepAlive: 60 * time.Second,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
 	return s3.New(session.Must(session.NewSession(
 		&aws.Config{
+			HTTPClient:                    client,
 			Credentials:                   creds,
 			DisableSSL:                    aws.Bool(!opts.useHttps),
 			Endpoint:                      aws.String(opts.endpoint),
