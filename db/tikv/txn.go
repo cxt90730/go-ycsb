@@ -16,7 +16,9 @@ package tikv
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/util"
@@ -40,7 +42,7 @@ func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) 
 	}
 
 	bufPool := util.NewBufPool()
-
+	rand.Seed(time.Now().UnixNano())
 	return &txnDB{
 		db:      db,
 		r:       util.NewRowCodec(p),
@@ -224,6 +226,7 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 	}
 
 	defer tx.Rollback()
+	fmt.Println(string(db.getRowKey(table, key)))
 	if err = tx.Set(db.getRowKey(table, key), rowData); err != nil {
 		return err
 	}
