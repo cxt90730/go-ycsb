@@ -16,7 +16,9 @@ package tikv
 import (
 	"context"
 	"fmt"
+	"github.com/pingcap/go-ycsb/pkg/prop"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,6 +34,7 @@ type txnDB struct {
 	db      *txnkv.Client
 	r       *util.RowCodec
 	bufPool *util.BufPool
+	random  bool
 }
 
 func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) {
@@ -43,10 +46,13 @@ func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) 
 
 	bufPool := util.NewBufPool()
 	rand.Seed(time.Now().UnixNano())
+	random := p.GetBool(prop.RandomKey, false)
 	return &txnDB{
 		db:      db,
 		r:       util.NewRowCodec(p),
-		bufPool: bufPool}, nil
+		bufPool: bufPool,
+		random: random}, nil
+
 }
 
 func (db *txnDB) Close() error {
@@ -226,7 +232,10 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 	}
 
 	defer tx.Rollback()
-	fmt.Println(string(db.getRowKey(table, key)))
+	if db.random {
+		key = strconv.Itoa(rand.Intn(1000)) + key
+	}
+	fmt.Println(string(db.getRowKey(table, key))
 	if err = tx.Set(db.getRowKey(table, key), rowData); err != nil {
 		return err
 	}
