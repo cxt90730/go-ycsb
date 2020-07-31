@@ -235,7 +235,6 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 	if db.random {
 		key = strconv.Itoa(rand.Intn(1000)) + string(db.getRowKey(table, key))
 	}
-	fmt.Println(string(db.getRowKey(table, key)))
 	if err = tx.Set([]byte(key), rowData); err != nil {
 		return err
 	}
