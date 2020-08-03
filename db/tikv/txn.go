@@ -31,10 +31,11 @@ import (
 )
 
 type txnDB struct {
-	db      *txnkv.Client
-	r       *util.RowCodec
-	bufPool *util.BufPool
-	random  bool
+	db        *txnkv.Client
+	r         *util.RowCodec
+	bufPool   *util.BufPool
+	random    bool
+	followyig bool
 }
 
 func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) {
@@ -47,11 +48,13 @@ func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) 
 	bufPool := util.NewBufPool()
 	rand.Seed(time.Now().UnixNano())
 	random := p.GetBool(prop.RandomKey, false)
+	follow := p.GetBool(prop.FollowYig, false)
 	return &txnDB{
-		db:      db,
-		r:       util.NewRowCodec(p),
-		bufPool: bufPool,
-		random: random}, nil
+		db:        db,
+		r:         util.NewRowCodec(p),
+		bufPool:   bufPool,
+		random:    random,
+		followyig: follow}, nil
 
 }
 
@@ -226,16 +229,27 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 		return err
 	}
 
+	if db.followyig {
+		tx2, err := db.db.Begin()
+		if err != nil {
+			return err
+		}
+		tx2.Get([]byte("TheKeyNotExistKey"))
+	}
+
 	tx, err := db.db.Begin()
 	if err != nil {
 		return err
 	}
 
 	defer tx.Rollback()
+	var insertKey []byte
 	if db.random {
-		key = strconv.Itoa(rand.Intn(1000)) + string(db.getRowKey(table, key))
+		insertKey = []byte(strconv.Itoa(rand.Intn(1000)) + string(db.getRowKey(table, key)))
+	} else {
+		insertKey = db.getRowKey(table, key)
 	}
-	if err = tx.Set([]byte(key), rowData); err != nil {
+	if err = tx.Set(insertKey, rowData); err != nil {
 		return err
 	}
 
