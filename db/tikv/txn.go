@@ -229,14 +229,6 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 		return err
 	}
 
-	if db.followyig {
-		tx2, err := db.db.Begin()
-		if err != nil {
-			return err
-		}
-		tx2.Get([]byte("TheKeyNotExistKey"))
-	}
-
 	tx, err := db.db.Begin()
 	if err != nil {
 		return err
@@ -248,6 +240,13 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 		insertKey = []byte(strconv.Itoa(rand.Intn(1000)) + string(db.getRowKey(table, key)))
 	} else {
 		insertKey = db.getRowKey(table, key)
+	}
+	if db.followyig {
+		tx2, err := db.db.Begin()
+		if err != nil {
+			return err
+		}
+		tx2.Get(insertKey)
 	}
 	if err = tx.Set(insertKey, rowData); err != nil {
 		return err
