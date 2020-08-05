@@ -89,13 +89,18 @@ func (r *redis) Update(ctx context.Context, table string, key string, values map
 }
 
 func (r *redis) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
+	data, err := json.Marshal(values)
 	if r.mock {
-		r.client.Get(table + "1")
-		r.client.Get("NotExist" + table)
-		r.client.Del("NotExist" + table)
+		r.client.Get("usertable/node3_user2831151396250858077")
+		k := table + string(data)
+		r.client.Get(k)
+		if "usertable/node3_user2831151396250858077" == k {
+			return nil
+		}
+		r.client.Del(k)
 		return nil
 	}
-	data, err := json.Marshal(values)
+
 	if err != nil {
 		return err
 	}
