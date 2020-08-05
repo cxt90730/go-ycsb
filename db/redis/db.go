@@ -94,7 +94,7 @@ func (r *redis) Insert(ctx context.Context, table string, key string, values map
 		r.client.Get("usertable/node3_user2831151396250858077")
 		k := table+key
 		r.client.Get(k)
-		r.client.Del(k)
+		//r.client.Del(k)
 		return nil
 	}
 
