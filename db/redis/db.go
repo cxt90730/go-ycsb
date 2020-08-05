@@ -93,7 +93,7 @@ func (r *redis) Insert(ctx context.Context, table string, key string, values map
 		r.client.Get(table + "1")
 		r.client.Get("NotExist" + table)
 		r.client.Del("NotExist" + table)
-		return
+		return nil
 	}
 	data, err := json.Marshal(values)
 	if err != nil {
