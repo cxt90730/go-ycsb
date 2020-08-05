@@ -92,11 +92,8 @@ func (r *redis) Insert(ctx context.Context, table string, key string, values map
 	data, err := json.Marshal(values)
 	if r.mock {
 		r.client.Get("usertable/node3_user2831151396250858077")
-		k := table + string(data)
+		k := table+key
 		r.client.Get(k)
-		if "usertable/node3_user2831151396250858077" == k {
-			return nil
-		}
 		r.client.Del(k)
 		return nil
 	}
