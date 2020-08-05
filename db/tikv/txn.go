@@ -48,7 +48,7 @@ func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) 
 	bufPool := util.NewBufPool()
 	rand.Seed(time.Now().UnixNano())
 	random := p.GetBool(prop.RandomKey, false)
-	follow := p.GetBool(prop.FollowYig, false)
+	follow := p.GetBool(prop.Mock, false)
 	return &txnDB{
 		db:        db,
 		r:         util.NewRowCodec(p),

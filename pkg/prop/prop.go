@@ -109,7 +109,7 @@ const (
 	RandomBucket     = "randombucket"
 	KeyPrefix        = "keyprefix"
 	KeyPrefixDefault = "user"
-	FollowYig        = "followyig"
+	Mock             = "mock"
 
 	Panic        = "panic"
 	PanicDefault = false

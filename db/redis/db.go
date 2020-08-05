@@ -5,10 +5,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
-	goredis "github.com/go-redis/redis"
+	goredis "github.com/go-redis/redis/v7"
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/prop"
 	"github.com/pingcap/go-ycsb/pkg/util"
@@ -27,6 +28,7 @@ type redisClient interface {
 type redis struct {
 	client redisClient
 	mode   string
+	mock   bool
 }
 
 func (r *redis) Close() error {
@@ -87,6 +89,12 @@ func (r *redis) Update(ctx context.Context, table string, key string, values map
 }
 
 func (r *redis) Insert(ctx context.Context, table string, key string, values map[string][]byte) error {
+	if r.mock {
+		r.client.Get(table + "1")
+		r.client.Get("NotExist" + table)
+		r.client.Del("NotExist" + table)
+		return
+	}
 	data, err := json.Marshal(values)
 	if err != nil {
 		return err
@@ -128,6 +136,8 @@ func (r redisCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 			}
 		}
 	}
+	s := p.GetString(prop.Mock, "false")
+	rds.mock, _ = strconv.ParseBool(s)
 	rds.mode = mode
 
 	return rds, nil

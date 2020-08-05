@@ -56,6 +56,10 @@ func runClientCommandFunc(cmd *cobra.Command, args []string, doTransactions bool
 		if cmd.Flags().Changed("random") {
 			globalProps.Set(prop.RandomKey, strconv.FormatBool(randomKeyArg))
 		}
+
+		if cmd.Flags().Changed("mock") {
+			globalProps.Set(prop.Mock, strconv.FormatBool(mockArg))
+		}
 	})
 
 	fmt.Println("***************** properties *****************")
@@ -86,6 +90,7 @@ var (
 	panicArg     bool
 	silenceArg   bool
 	randomKeyArg bool
+	mockArg      bool
 )
 
 func initClientCommand(m *cobra.Command) {
@@ -97,6 +102,7 @@ func initClientCommand(m *cobra.Command) {
 	m.Flags().BoolVar(&panicArg, "panic", false, "Panic on error.")
 	m.Flags().BoolVar(&silenceArg, "silence", true, "Silence on error.")
 	m.Flags().BoolVar(&randomKeyArg, "random", false, "Generate random key.")
+	m.Flags().BoolVar(&mockArg, "mock", false, "simulate yig operation.")
 }
 
 func newLoadCommand() *cobra.Command {
