@@ -248,18 +248,18 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 	} else {
 		insertKey = db.getRowKey(table, key)
 	}
+	if db.keySize > 0 && len(insertKey) > db.keySize{
+		insertKey = insertKey[:db.keySize]
+	}
+	if db.valSize > 0 && len(rowData) > db.valSize {
+		rowData = rowData[:db.valSize]
+	}
 	if db.followyig {
 		tx2, err := db.db.Begin()
 		if err != nil {
 			return err
 		}
 		tx2.Get(insertKey)
-	}
-	if db.keySize > 0 && len(insertKey) > db.keySize{
-		insertKey = insertKey[:db.keySize]
-	}
-	if db.valSize > 0 && len(rowData) > db.valSize {
-		rowData = rowData[:db.valSize]
 	}
 	if err = tx.Set(insertKey, rowData); err != nil {
 		return err
