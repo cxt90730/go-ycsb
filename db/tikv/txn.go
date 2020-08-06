@@ -36,6 +36,8 @@ type txnDB struct {
 	bufPool   *util.BufPool
 	random    bool
 	followyig bool
+	keySize   int
+	valSize   int
 }
 
 func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) {
@@ -49,12 +51,17 @@ func createTxnDB(p *properties.Properties, conf config.Config) (ycsb.DB, error) 
 	rand.Seed(time.Now().UnixNano())
 	random := p.GetBool(prop.RandomKey, false)
 	follow := p.GetBool(prop.Mock, false)
+	kenLen := p.GetInt(prop.KeyLength, 0)
+	valLen := p.GetInt(prop.ValueLength, 0)
 	return &txnDB{
 		db:        db,
 		r:         util.NewRowCodec(p),
 		bufPool:   bufPool,
 		random:    random,
-		followyig: follow}, nil
+		followyig: follow,
+		keySize:   kenLen,
+		valSize:   valLen,
+	}, nil
 
 }
 
@@ -247,6 +254,12 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 			return err
 		}
 		tx2.Get(insertKey)
+	}
+	if db.keySize > 0 && len(insertKey) > db.keySize{
+		insertKey = insertKey[:db.keySize]
+	}
+	if db.valSize > 0 && len(rowData) > db.valSize {
+		rowData = rowData[:db.valSize]
 	}
 	if err = tx.Set(insertKey, rowData); err != nil {
 		return err

@@ -110,6 +110,8 @@ const (
 	KeyPrefix        = "keyprefix"
 	KeyPrefixDefault = "user"
 	Mock             = "mock"
+	KeyLength        = "key.len"
+	ValueLength      = "val.len"
 
 	Panic        = "panic"
 	PanicDefault = false
