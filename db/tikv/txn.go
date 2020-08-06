@@ -248,8 +248,8 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 	} else {
 		insertKey = db.getRowKey(table, key)
 	}
-	if db.keySize > 0 && len(insertKey) > db.keySize{
-		insertKey = insertKey[:db.keySize]
+	if db.keySize > 0 && len(key) > db.keySize{
+		insertKey = []byte(strconv.Itoa(rand.Intn(1000)) + key[len(key) - db.keySize:])
 	}
 	if db.valSize > 0 && len(rowData) > db.valSize {
 		rowData = rowData[:db.valSize]
@@ -268,7 +268,7 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		fmt.Println(insertKey, "err:", err)
+		fmt.Println(string(insertKey), "err:", err)
 	}
 	return err
 }
