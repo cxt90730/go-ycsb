@@ -261,11 +261,16 @@ func (db *txnDB) Insert(ctx context.Context, table string, key string, values ma
 		}
 		tx2.Get(insertKey)
 	}
+
 	if err = tx.Set(insertKey, rowData); err != nil {
 		return err
 	}
 
-	return tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		fmt.Println(insertKey, "err:", err)
+	}
+	return err
 }
 
 func (db *txnDB) BatchInsert(ctx context.Context, table string, keys []string, values []map[string][]byte) error {
